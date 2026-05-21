@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 
 import imageCompression from "browser-image-compression";
 
+
 const categories = [
   "Vegetables",
   "Fruits",
@@ -72,7 +73,11 @@ export default function AddProductPage() {
 
   const [showCategories, setShowCategories] =
     useState(false);
+const [showTermsModal, setShowTermsModal] =
+  useState(false);
 
+const [acceptedTerms, setAcceptedTerms] =
+  useState(false);
   // =========================
   // DELIVERY SETTINGS
   // =========================
@@ -472,7 +477,13 @@ export default function AddProductPage() {
 
       return;
     }
+if (!acceptedTerms) {
+  alert(
+    "Please accept Seller Terms & Conditions",
+  );
 
+  return;
+}
     try {
       setLoading(true);
 
@@ -990,7 +1001,474 @@ export default function AddProductPage() {
             </button>
           </div>
         </div>
+        {/* ========================= */}
+        {/* TERMS & CONDITIONS */}
+        {/* ========================= */}
+
+        <div className="bg-white p-6 rounded-2xl shadow">
+          <h2 className="text-2xl font-bold mb-5">
+            Seller Terms & Conditions
+          </h2>
+
+          <div className="flex items-start gap-3">
+      
+          
+              <button
+                type="button"
+                onClick={() =>
+                  setShowTermsModal(true)
+                }
+                className="text-blue-600 font-semibold underline"
+              >
+                click here
+              </button>
+      
+          </div>
+        </div>
       </div>
+
+      {/* ========================= */}
+      {/* TERMS MODAL */}
+      {/* ========================= */}
+
+      {showTermsModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center px-4">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 max-h-[90vh] overflow-y-auto relative">
+            <button
+              type="button"
+              onClick={() =>
+                setShowTermsModal(false)
+              }
+              className="absolute top-4 right-4 text-xl font-bold"
+            >
+              ✕
+            </button>
+
+            <h2 className="text-3xl font-bold mb-6">
+              Seller Shop Policy &
+              Terms
+            </h2>
+
+            <div className="space-y-5 text-sm text-gray-700 leading-7">
+              <div>
+                <h3 className="font-bold text-black">
+                  Seller Partnership
+                  Agreement
+                </h3>
+
+                <p>
+                  By registering as a
+                  seller on [Your Platform
+                  Name], the shop owner
+                  agrees to the following
+                  policies:
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  1. Seller Eligibility
+                </h3>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Seller must operate
+                    a legitimate local
+                    business.
+                  </li>
+
+                  <li>
+                    Seller must provide
+                    accurate business and
+                    contact details.
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  2. Product Listing
+                  Rules
+                </h3>
+
+                <p>
+                  Sellers may list
+                  products available in
+                  their shop inventory.
+                </p>
+
+                <p>
+                  Sellers are responsible
+                  for:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>Correct pricing</li>
+                  <li>
+                    Product images
+                  </li>
+                  <li>
+                    Product descriptions
+                  </li>
+                  <li>Expiry dates</li>
+                  <li>
+                    Availability updates
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  3. Prohibited Products
+                </h3>
+
+                <p>
+                  Sellers must not list:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Illegal products
+                  </li>
+                  <li>Expired items</li>
+                  <li>
+                    Alcohol (if
+                    restricted)
+                  </li>
+                  <li>
+                    Tobacco products (if
+                    restricted)
+                  </li>
+                  <li>
+                    Unsafe or counterfeit
+                    goods
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  4. Order Acceptance
+                </h3>
+
+                <p>
+                  Sellers must accept or
+                  reject orders within a
+                  reasonable time.
+                </p>
+
+                <p>
+                  Accepted orders must be
+                  prepared properly for
+                  delivery or pickup.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  5. Delivery
+                  Responsibility
+                </h3>
+
+                <p>Seller may use:</p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Their own delivery
+                    staff
+                  </li>
+
+                  <li>
+                    Platform-arranged
+                    delivery (if
+                    available in future)
+                  </li>
+                </ul>
+
+                <p>
+                  Seller is responsible
+                  for safe and timely
+                  delivery.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  6. Commission Policy
+                </h3>
+
+                <p>
+                  The platform may
+                  charge:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>Listing fees</li>
+                  <li>
+                    Subscription fees
+                  </li>
+                  <li>
+                    Per-order commission
+                  </li>
+                  <li>
+                    Promotional charges
+                  </li>
+                </ul>
+
+                <p>
+                  Applicable charges will
+                  be informed beforehand.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  7. Delivery
+                  Confirmation System
+                </h3>
+
+                <p>
+                  To prevent disputes and
+                  commission fraud:
+                </p>
+
+                <p>
+                  Every delivered order
+                  must be marked
+                  completed using:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    OTP verification
+                  </li>
+                  <li>
+                    Customer confirmation
+                    button
+                  </li>
+                  <li>
+                    Delivery code system
+                  </li>
+                </ul>
+
+                <p>
+                  If seller fails to mark
+                  delivery properly,
+                  platform records may
+                  still be considered
+                  valid proof.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  8. Fraud &
+                  Manipulation
+                </h3>
+
+                <p>Seller must not:</p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Ask customers to
+                    place orders outside
+                    the platform
+                  </li>
+
+                  <li>
+                    Encourage customers
+                    to falsely deny
+                    delivery
+                  </li>
+
+                  <li>
+                    Manipulate order
+                    status
+                  </li>
+
+                  <li>
+                    Create fake orders
+                  </li>
+
+                  <li>
+                    Avoid platform
+                    commission
+                    intentionally
+                  </li>
+                </ul>
+
+                <p>
+                  Violation may result
+                  in:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>Penalties</li>
+                  <li>
+                    Temporary suspension
+                  </li>
+                  <li>
+                    Permanent removal
+                    from the platform
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  9. Quality
+                  Responsibility
+                </h3>
+
+                <p>
+                  Seller is solely
+                  responsible for:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Product freshness
+                  </li>
+
+                  <li>Hygiene</li>
+
+                  <li>Packaging</li>
+
+                  <li>
+                    Product authenticity
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  10. Customer
+                  Complaints
+                </h3>
+
+                <p>
+                  Sellers must cooperate
+                  in resolving:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>Missing items</li>
+                  <li>
+                    Wrong products
+                  </li>
+                  <li>
+                    Damaged goods
+                  </li>
+                  <li>
+                    Refund disputes
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  11. Cancellation
+                  Policy
+                </h3>
+
+                <p>
+                  Sellers should avoid
+                  unnecessary
+                  cancellations after
+                  accepting orders.
+                </p>
+
+                <p>
+                  Frequent cancellations
+                  may reduce seller
+                  visibility on the
+                  platform.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  12. Platform Rights
+                </h3>
+
+                <p>
+                  The platform reserves
+                  the right to:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Remove product
+                    listings
+                  </li>
+
+                  <li>
+                    Suspend sellers
+                  </li>
+
+                  <li>
+                    Hold payments in
+                    suspicious cases
+                  </li>
+
+                  <li>
+                    Modify commissions
+                    or policies with
+                    notice
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  13. Data & Privacy
+                </h3>
+
+                <p>
+                  Seller data will only
+                  be used for:
+                </p>
+
+                <ul className="list-disc ml-6">
+                  <li>
+                    Platform operations
+                  </li>
+
+                  <li>
+                    Order management
+                  </li>
+
+                  <li>
+                    Customer support
+                  </li>
+
+                  <li>
+                    Business analytics
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-black">
+                  14. Termination
+                </h3>
+
+                <p>
+                  Either party may
+                  terminate the
+                  partnership.
+                </p>
+
+                <p>
+                  Pending disputes or
+                  unpaid dues must be
+                  cleared before closure.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

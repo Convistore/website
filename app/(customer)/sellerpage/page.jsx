@@ -22,6 +22,7 @@ import Footer from "@/app/components/Footer";
 
 
 
+
 const FETCH_LIMIT = 7;
 
 const CACHE_TIME = 1000 * 60 * 5; // 5 mins cache
@@ -510,6 +511,7 @@ export default function SellerPage() {
           <p className="mt-4 sm:mt-5 text-base sm:text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl mx-auto">
             Fresh finds, fast delivery straight from your neighbourhood.
           </p>
+          
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import {
   Heart,
   ArrowUpRight,
 } from "lucide-react";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -24,27 +25,28 @@ export default function Footer() {
           {/* BRAND */}
           <div>
             {/* LOGO */}
-            <Link
-              href="/"
-              className="flex items-center gap-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-[#2EE6A6] flex items-center justify-center shadow-md">
-                <ShoppingBag className="w-6 h-6 text-[#0F172A]" />
-              </div>
+    <Link
+  href="/"
+  className="flex flex-col "
+>
+  {/* LOGO */}
+  <div className="relative w-20 h-10 sm:w-20 sm:h-10 md:w-24 md:h-10 lg:w-28 lg:h-10 flex-shrink-0">
+    <Image
+      src="/ConviLogo.png"
+      alt="Convi Logo"
+      fill
+      className="object-contain"
+      priority
+    />
+  </div>
 
-              <div>
-                <h2 className="text-2xl font-black tracking-tight text-[#0F172A]">
-                  Convi
-                  <span className="text-[#2EE6A6]">
-                    store
-                  </span>
-                </h2>
-
-                <p className="text-xs text-gray-500">
-                  Fast local shopping
-                </p>
-              </div>
-            </Link>
+  {/* TEXT */}
+  <div className="leading-tight">
+    <p className="text-xs sm:text-sm text-gray-500 mt-1">
+      Fast local shopping
+    </p>
+  </div>
+</Link>
 
             <p className="text-sm text-gray-500 leading-relaxed mt-5 max-w-sm">
               Get groceries, snacks,
@@ -138,31 +140,27 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* NEWSLETTER */}
-          <div>
-            <h3 className="text-lg font-black text-[#0F172A] mb-5">
-              Stay Updated
-            </h3>
+        {/* TERMS & CONDITIONS */}
+<div>
+  <h3 className="text-lg font-black text-[#0F172A] mb-5">
+    Terms & Conditions
+  </h3>
 
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Get updates about new
-              stores, offers and
-              product availability.
-            </p>
+  <p className="text-sm text-gray-500 leading-relaxed">
+    Read our customer policies, delivery rules,
+    refunds, returns, and platform guidelines.
+  </p>
 
-            <div className="mt-5 flex flex-col gap-3">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="w-full bg-[#F8FAFC] border border-gray-200 rounded-2xl px-4 py-3 text-sm outline-none focus:border-[#2EE6A6]"
-              />
-
-              <button className="bg-[#2EE6A6] hover:bg-[#27d497] transition text-[#0F172A] py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-md">
-                Subscribe
-                <ArrowUpRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+  <div className="mt-5">
+    <button
+      onClick={() => window.location.href = "/customer/terms"}
+      className="w-full bg-[#2EE6A6] hover:bg-[#27d497] transition text-[#0F172A] py-3 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-md"
+    >
+      View Terms
+      <ArrowUpRight className="w-4 h-4" />
+    </button>
+  </div>
+</div>
         </div>
       </div>
 

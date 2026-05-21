@@ -37,6 +37,7 @@ import {
   doc,
   getDoc,
 } from "firebase/firestore";
+import Image from "next/image";
 
 export default function Navbar() {
   const router = useRouter();
@@ -257,39 +258,23 @@ export default function Navbar() {
       >
         <div className="w-full max-w-7xl mx-auto px-3 sm:px-5 lg:px-8 h-[72px] flex items-center justify-between">
 
-          {/* LEFT */}
-          <Link
-            href="/"
-            className="group flex items-center gap-3 min-w-0"
-          >
-
-            {/* LOGO */}
-            <div
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 group-hover:scale-105 ${theme.logoBg}`}
-            >
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-
-            {/* BRAND */}
-            <div className="flex flex-col leading-tight min-w-0">
-              <span
-                className={`text-[22px] font-semibold tracking-wide truncate ${theme.logoText}`}
-              >
-                Convi
-                <span
-                  className={`ml-1 ${theme.accent}`}
-                >
-                  store
-                </span>
-              </span>
-
-              <span
-                className={`text-[11px] font-light truncate ${theme.subText}`}
-              >
-                Fast local shopping
-              </span>
-            </div>
-          </Link>
+   {/* LEFT */}
+{/* LEFT */}
+<Link
+  href="/"
+  className="flex items-center"
+>
+  {/* LOGO */}
+  <div className="relative w-40 h-40   sm:w-40 sm:h-440 md:w-44 md:h-4 lg:w-50 lg:h-50  transition-all duration-300 group-hover:scale-105">
+    <Image
+      src="/ConviLogo.png"
+      alt="Convi Logo"
+      fill
+      className="object-contain"
+      priority
+    />
+  </div>
+</Link>
 
           {/* DESKTOP NAV */}
           <div className="hidden lg:flex items-center gap-2">
