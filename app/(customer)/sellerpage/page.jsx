@@ -469,7 +469,27 @@ export default function SellerPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans text-gray-900">
       <Navbar />
-
+     <div
+  onClick={() => router.push("/customer/leaderboard")}
+  className="mt-4 flex cursor-pointer justify-center items-center gap-2  border border-yellow-300/40 bg-gradient-to-r from-yellow-100 via-white to-yellow-50 px-5 py-3 text-sm sm:text-base font-extrabold text-yellow-800 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg"
+>
+  🏆 Check Leaderboard
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    width="16"
+    height="16"
+  >
+    <path
+      d="M3 8h10M9 4l4 4-4 4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+</div>
+          
       {/* HERO SECTION */}
       <div className="relative overflow-hidden bg-gradient-to-b from-white via-green-50/30 to-gray-50 pt-14 pb-20 sm:pt-16 sm:pb-24 px-4">
         <div className="absolute inset-0 opacity-30" style={{
@@ -477,6 +497,7 @@ export default function SellerPage() {
           backgroundSize: '30px 30px'
         }} />
         <div className="relative z-10 max-w-3xl mx-auto text-center">
+          
           <span className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold mb-5 sm:mb-6">
             🛒 Local marketplace
           </span>

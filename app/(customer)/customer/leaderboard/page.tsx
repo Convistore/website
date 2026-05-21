@@ -231,22 +231,22 @@ const fetchLeaderboard = async (signal: AbortSignal) => {
     }, 400);
   };
 
-  const avatarUrl = (
+const avatarUrl = (
   name: string,
   photoURL?: string,
   tint = "111",
   fg = "666"
 ) => {
-  // VALID GOOGLE IMAGE
+  const cleaned = photoURL?.trim();
+
   if (
-    photoURL &&
-    typeof photoURL === "string" &&
-    photoURL.startsWith("http")
+    cleaned &&
+    typeof cleaned === "string" &&
+    cleaned.startsWith("http")
   ) {
-    return photoURL;
+    return cleaned;
   }
 
-  // FALLBACK AVATAR
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(
     name || "User"
   )}&background=${tint}&color=${fg}&bold=true`;
@@ -516,7 +516,7 @@ const fetchLeaderboard = async (signal: AbortSignal) => {
                   {topThree[1] && (
                     <div className="podium-slot" data-rank="2">
                       <div className="podium-avatar-wrap">
-                        <img className="podium-avatar" src={avatarUrl(topThree[1].name, topThree[1].photoURL, "222", "aaa")} alt={topThree[1].name} />
+                        <img className="podium-avatar" src={avatarUrl(topThree[1].name, topThree[1].photoURL, "222", "aaa")} alt={topThree[1].name} referrerPolicy="no-referrer" />
                         <div className="podium-badge">2</div>
                       </div>
                       <div className="podium-name">{topThree[1].name.split(" ")[0]}</div>
@@ -532,7 +532,7 @@ const fetchLeaderboard = async (signal: AbortSignal) => {
                   {topThree[0] && (
                     <div className="podium-slot" data-rank="1">
                       <div className="podium-avatar-wrap">
-                        <img className="podium-avatar" src={avatarUrl(topThree[0].name, topThree[0].photoURL, "2a2200", "C9A84C")} alt={topThree[0].name} />
+                        <img className="podium-avatar" src={avatarUrl(topThree[0].name, topThree[0].photoURL, "2a2200", "C9A84C")} alt={topThree[0].name} referrerPolicy="no-referrer" />
                         <div className="podium-badge">1</div>
                       </div>
                       <div className="podium-name">{topThree[0].name.split(" ")[0]}</div>
@@ -548,7 +548,7 @@ const fetchLeaderboard = async (signal: AbortSignal) => {
                   {topThree[2] && (
                     <div className="podium-slot" data-rank="3">
                       <div className="podium-avatar-wrap">
-                        <img className="podium-avatar" src={avatarUrl(topThree[2].name, topThree[2].photoURL, "1a0e00", "B87333")} alt={topThree[2].name} />
+                        <img className="podium-avatar" src={avatarUrl(topThree[2].name, topThree[2].photoURL, "1a0e00", "B87333")} alt={topThree[2].name} referrerPolicy="no-referrer" />
                         <div className="podium-badge">3</div>
                       </div>
                       <div className="podium-name">{topThree[2].name.split(" ")[0]}</div>
@@ -587,6 +587,7 @@ const fetchLeaderboard = async (signal: AbortSignal) => {
                           className="lb-row-avatar"
                           src={avatarUrl(user.name, user.photoURL)}
                           alt={user.name}
+                          referrerPolicy="no-referrer"
                         />
                         <div className="lb-row-info">
                           <div className="lb-row-name" style={{ display: "flex", alignItems: "center", gap: 6 }}>

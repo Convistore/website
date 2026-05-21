@@ -540,7 +540,7 @@ export default function AdminDashboard() {
       );
 
       return products
-        .map((product) => ({
+        .map((product: any) => ({
           ...product,
 
           sold:

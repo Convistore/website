@@ -39,7 +39,9 @@ export default function RequestProductPage() {
     location: "",
   });
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
     e.preventDefault();
 
     if (!form.productName || !form.category) {

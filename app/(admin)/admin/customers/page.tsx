@@ -744,8 +744,9 @@ export default function AdminCustomersPage() {
                               ?.house ||
                             ""
                           }
-                          onSave={(
-                            value
+                         onSave={(
+  value: string | number
+
                           ) =>
                             updateField(
                               customer.id,
@@ -763,9 +764,9 @@ export default function AdminCustomersPage() {
                               ?.area ||
                             ""
                           }
-                          onSave={(
-                            value
-                          ) =>
+                       onSave={(
+  value: string | number
+) =>
                             updateField(
                               customer.id,
                               "address.area",
@@ -782,9 +783,9 @@ export default function AdminCustomersPage() {
                               ?.city ||
                             ""
                           }
-                          onSave={(
-                            value
-                          ) =>
+                    onSave={(
+  value: string | number
+) =>
                             updateField(
                               customer.id,
                               "address.city",

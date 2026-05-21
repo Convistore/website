@@ -12,79 +12,167 @@ import {
   where,
   limit,
   startAfter,
+  QueryDocumentSnapshot,
+  DocumentData,
+  doc,
+  getDoc,
 } from "firebase/firestore";
 import { auth } from "../../../../../lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
 
 const PRODUCTS_LIMIT = 8;
 const PLATFORM_FEE = 0;
 
-/* ─── tiny helpers ─── */
-const fmt = (n) => Number(n).toLocaleString("en-IN");
+/* ───────────────── TYPES ───────────────── */
 
-// Safe URL builder for Next.js Image component
-const buildImageUrl = (url: string | null | undefined, transforms: string, fallback: string) => {
-  if (!url || typeof url !== "string" || url.trim() === "") return fallback;
+interface Product {
+  id: string;
+  name?: string;
+  category?: string;
+  unit?: string;
+  price?: number;
+  stock?: number;
+  sellerId?: string;
+  images?: string[];
+  status?: {
+    isAvailable?: boolean;
+  };
+}
+
+interface Seller {
+  id?: string;
+  shopName?: string;
+  status?: string;
+  sellerImage?: {
+    url?: string;
+  };
+  shopImage?: {
+    url?: string;
+  };
+  location?: {
+    fullAddress?: string;
+  };
+  deliverySettings?: {
+    map?: {
+      enabled?: boolean;
+      charge?: number;
+    };
+  };
+}
+
+interface CartItem extends Product {
+  qty: number;
+}
+
+/* ───────────────── HELPERS ───────────────── */
+
+const fmt = (n: number) =>
+  Number(n || 0).toLocaleString("en-IN");
+
+const buildImageUrl = (
+  url: string | null | undefined,
+  transforms: string,
+  fallback: string
+) => {
+  if (!url || typeof url !== "string" || url.trim() === "") {
+    return fallback;
+  }
+
   const separator = url.includes("?") ? "&" : "?";
+
   if (url.startsWith("http") || url.startsWith("/")) {
     return `${url}${separator}${transforms}`;
   }
+
   if (!url.startsWith("http") && !url.startsWith("/")) {
     return `https://${url}${separator}${transforms}`;
   }
+
   return fallback;
 };
 
 export default function MongsoShopPage() {
   const params = useParams();
   const router = useRouter();
-  const sellerId = params?.id;
-  
+
+  const sellerId = params?.id as string;
+
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [seller, setSeller] = useState(null);
-  const [products, setProducts] = useState([]);
+
+  const [seller, setSeller] =
+    useState<Seller | null>(null);
+
+  const [products, setProducts] = useState<Product[]>(
+    []
+  );
+
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [lastDoc, setLastDoc] = useState(null);
+
+  const [loadingMore, setLoadingMore] =
+    useState(false);
+
+  const [lastDoc, setLastDoc] =
+    useState<QueryDocumentSnapshot<DocumentData> | null>(
+      null
+    );
+
   const [hasMore, setHasMore] = useState(true);
+
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [cart, setCart] = useState({});
+
+  const [categoryFilter, setCategoryFilter] =
+    useState("All");
+
+  const [cart, setCart] = useState<
+    Record<string, number>
+  >({});
+
   const [showCart, setShowCart] = useState(false);
-  const [cartAnimating, setCartAnimating] = useState(false);
-  
-  // 🚚 Delivery state - Only Same-Day (map) delivery available
-  const [selectedDelivery, setSelectedDelivery] = useState("map");
-  
-  const observer = useRef(null);
-  
-  const CATEGORIES = useMemo(() => {
-    const uniqueCategories = [
-      ...new Set(
-        products
-          .map((p) => p.category)
-          .filter(Boolean)
-      ),
-    ];
-    return ["All", ...uniqueCategories];
-  }, [products]);
 
-  /* ─────────────────────
-   CACHE SETTINGS
-  ───────────────────── */
-  const CACHE_TIME = 1000 * 60 * 5; // 5 mins
+  const [cartAnimating, setCartAnimating] =
+    useState(false);
 
-  /* ─────────────────────
-   FETCH SELLER
-  ───────────────────── */
+  const [selectedDelivery, setSelectedDelivery] =
+    useState("map");
+
+  const observer =
+    useRef<IntersectionObserver | null>(null);
+
+  const CACHE_TIME = 1000 * 60 * 5;
+
+const CATEGORIES: string[] = useMemo(() => {
+  const uniqueCategories = [
+    ...new Set(
+      products
+        .map((p: Product) => p.category)
+        .filter(
+          (category): category is string =>
+            Boolean(category)
+        )
+    ),
+  ];
+
+  return ["All", ...uniqueCategories];
+}, [products]);
+
+  /* ───────────────── FETCH SELLER ───────────────── */
+
   const fetchSeller = async () => {
     try {
-      const cachedSeller = localStorage.getItem(`seller_${sellerId}`);
-      const sellerCacheTime = localStorage.getItem(`seller_cache_time_${sellerId}`);
+      const cachedSeller = localStorage.getItem(
+        `seller_${sellerId}`
+      );
+
+      const sellerCacheTime =
+        localStorage.getItem(
+          `seller_cache_time_${sellerId}`
+        );
 
       if (cachedSeller && sellerCacheTime) {
-        const isExpired = Date.now() - Number(sellerCacheTime) > CACHE_TIME;
+        const isExpired =
+          Date.now() - Number(sellerCacheTime) >
+          CACHE_TIME;
+
         if (!isExpired) {
           setSeller(JSON.parse(cachedSeller));
           return;
@@ -100,21 +188,33 @@ export default function MongsoShopPage() {
       const snap = await getDocs(q);
 
       if (!snap.empty) {
-        const data = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        const data = {
+          id: snap.docs[0].id,
+          ...snap.docs[0].data(),
+        } as Seller;
+
         setSeller(data);
 
-        localStorage.setItem(`seller_${sellerId}`, JSON.stringify(data));
-        localStorage.setItem(`seller_cache_time_${sellerId}`, Date.now().toString());
+        localStorage.setItem(
+          `seller_${sellerId}`,
+          JSON.stringify(data)
+        );
+
+        localStorage.setItem(
+          `seller_cache_time_${sellerId}`,
+          Date.now().toString()
+        );
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Fetch seller error:", e);
     }
   };
 
-  /* ─────────────────────
-   FETCH PRODUCTS
-  ───────────────────── */
-  const fetchProducts = async (loadMore = false) => {
+  /* ───────────────── FETCH PRODUCTS ───────────────── */
+
+  const fetchProducts = async (
+    loadMore: boolean = false
+  ) => {
     try {
       if (loadMore) {
         setLoadingMore(true);
@@ -122,11 +222,25 @@ export default function MongsoShopPage() {
         setLoading(true);
       }
 
-      const cachedProducts = localStorage.getItem(`products_${sellerId}`);
-      const productsCacheTime = localStorage.getItem(`products_cache_time_${sellerId}`);
+      const cachedProducts = localStorage.getItem(
+        `products_${sellerId}`
+      );
 
-      if (!loadMore && cachedProducts && productsCacheTime) {
-        const isExpired = Date.now() - Number(productsCacheTime) > CACHE_TIME;
+      const productsCacheTime =
+        localStorage.getItem(
+          `products_cache_time_${sellerId}`
+        );
+
+      if (
+        !loadMore &&
+        cachedProducts &&
+        productsCacheTime
+      ) {
+        const isExpired =
+          Date.now() -
+            Number(productsCacheTime) >
+          CACHE_TIME;
+
         if (!isExpired) {
           setProducts(JSON.parse(cachedProducts));
           setLoading(false);
@@ -135,6 +249,7 @@ export default function MongsoShopPage() {
       }
 
       let productQuery;
+
       if (loadMore && lastDoc) {
         productQuery = query(
           collection(db, "products"),
@@ -151,8 +266,18 @@ export default function MongsoShopPage() {
       }
 
       const snap = await getDocs(productQuery);
-      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      const lastVisible = snap.docs[snap.docs.length - 1];
+
+      const list: Product[] = snap.docs.map(
+        (d) =>
+          ({
+            id: d.id,
+            ...d.data(),
+          }) as Product
+      );
+
+      const lastVisible =
+        snap.docs[snap.docs.length - 1] || null;
+
       setLastDoc(lastVisible);
 
       if (snap.docs.length < PRODUCTS_LIMIT) {
@@ -160,20 +285,41 @@ export default function MongsoShopPage() {
       }
 
       if (loadMore) {
-        setProducts((prev) => {
+        setProducts((prev: Product[]) => {
           const merged = Array.from(
-            new Map([...prev, ...list].map((p) => [p.id, p])).values()
+            new Map(
+              [...prev, ...list].map(
+                (p: Product) => [p.id, p]
+              )
+            ).values()
           );
-          localStorage.setItem(`products_${sellerId}`, JSON.stringify(merged));
-          localStorage.setItem(`products_cache_time_${sellerId}`, Date.now().toString());
+
+          localStorage.setItem(
+            `products_${sellerId}`,
+            JSON.stringify(merged)
+          );
+
+          localStorage.setItem(
+            `products_cache_time_${sellerId}`,
+            Date.now().toString()
+          );
+
           return merged;
         });
       } else {
         setProducts(list);
-        localStorage.setItem(`products_${sellerId}`, JSON.stringify(list));
-        localStorage.setItem(`products_cache_time_${sellerId}`, Date.now().toString());
+
+        localStorage.setItem(
+          `products_${sellerId}`,
+          JSON.stringify(list)
+        );
+
+        localStorage.setItem(
+          `products_cache_time_${sellerId}`,
+          Date.now().toString()
+        );
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Fetch products error:", e);
     } finally {
       setLoading(false);
@@ -181,56 +327,61 @@ export default function MongsoShopPage() {
     }
   };
 
-  /* ─────────────────────
-   CUSTOMER AUTH CHECK
-  ───────────────────── */
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      try {
-        if (!user) {
-          localStorage.removeItem("customer_data");
-          router.replace("/customer/signin");
-          return;
-        }
+  /* ───────────────── AUTH ───────────────── */
 
-        const cachedCustomer = localStorage.getItem("customer_data");
-        if (cachedCustomer) {
-          const parsed = JSON.parse(cachedCustomer);
-          if (parsed?.uid === user.uid && parsed?.role === "customer" && !parsed?.isBlocked) {
-            setCheckingAuth(false);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      async (user) => {
+        try {
+          if (!user) {
+            localStorage.removeItem(
+              "customer_data"
+            );
+
+            router.replace("/customer/signin");
+
             return;
           }
-        }
 
-        const customerRef = doc(db, "customers", user.uid);
-        const customerSnap = await getDoc(customerRef);
+          const customerRef = doc(
+            db,
+            "customers",
+            user.uid
+          );
 
-        if (!customerSnap.exists()) {
+          const customerSnap =
+            await getDoc(customerRef);
+
+          if (!customerSnap.exists()) {
+            router.replace("/customer/signin");
+            return;
+          }
+
+          const customerData =
+            customerSnap.data();
+
+          if (
+            customerData.role !== "customer" ||
+            customerData.isBlocked
+          ) {
+            router.replace("/customer/signin");
+            return;
+          }
+
+          setCheckingAuth(false);
+        } catch (error: unknown) {
+          console.error(
+            "Auth check error:",
+            error
+          );
+
           router.replace("/customer/signin");
-          return;
+        } finally {
+          setCheckingAuth(false);
         }
-
-        const customerData = customerSnap.data();
-        if (customerData.role !== "customer" || customerData.isBlocked) {
-          router.replace("/customer/signin");
-          return;
-        }
-
-        localStorage.setItem(
-          "customer_data",
-          JSON.stringify({
-            uid: user.uid,
-            role: customerData.role,
-            isBlocked: customerData.isBlocked,
-          })
-        );
-      } catch (error) {
-        console.error("Auth check error:", error);
-        router.replace("/customer/signin");
-      } finally {
-        setCheckingAuth(false);
       }
-    });
+    );
 
     return () => unsubscribe();
   }, [router]);
@@ -243,106 +394,191 @@ export default function MongsoShopPage() {
   }, [sellerId]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("cart");
-    if (saved) setCart(JSON.parse(saved));
-    
-    // Load saved delivery preference AND seller context
-    const savedDelivery = localStorage.getItem("delivery_preference");
-    const savedSellerId = localStorage.getItem("checkout_seller_id");
-    
-    // Only accept "map" as valid delivery option now
-    if (savedDelivery === "map") setSelectedDelivery(savedDelivery);
-    
-    // If we have a different sellerId in storage, clear it to avoid conflicts
-    if (savedSellerId && savedSellerId !== sellerId) {
-      localStorage.removeItem("delivery_preference");
-      localStorage.removeItem("checkout_seller_id");
-      setSelectedDelivery("map");
+    const saved =
+      localStorage.getItem("cart");
+
+    if (saved) {
+      setCart(JSON.parse(saved));
     }
-  }, [sellerId]);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem(
+      "cart",
+      JSON.stringify(cart)
+    );
   }, [cart]);
 
-  // Save delivery preference + seller context
-  useEffect(() => {
-    if (sellerId) {
-      localStorage.setItem("delivery_preference", selectedDelivery);
-      localStorage.setItem("checkout_seller_id", sellerId);
-    }
-  }, [selectedDelivery, sellerId]);
+  /* ───────────────── CART ───────────────── */
 
-  /* ─── cart ─── */
-  const addItem = (id) => {
+  const addItem = (id: string) => {
     setCartAnimating(true);
-    setTimeout(() => setCartAnimating(false), 400);
-    setCart((prev) => ({ ...prev, [id]: (prev[id] || 0) + 1 }));
-  };
-  
-  const removeItem = (id) => {
-    setCart((prev) => {
-      const u = { ...prev };
-      u[id] > 1 ? (u[id] -= 1) : delete u[id];
-      return u;
-    });
-  };
 
-  /* ─── filter ─── */
-  const filteredProducts = useMemo(() => 
-    products.filter((p) => {
-      const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase());
-      const matchCat = categoryFilter === "All" ? true : p.category === categoryFilter;
-      return matchSearch && matchCat;
-    }), 
-  [products, search, categoryFilter]);
-
-  const cartItems = Object.entries(cart)
-    .map(([id, qty]) => {
-      const p = products.find((p) => p.id === id);
-      return p ? { ...p, qty } : null;
-    })
-    .filter(Boolean);
-
-  const subtotal = cartItems.reduce((s, i) => s + i.qty * i.price, 0);
-  
-  // 🚚 Calculate delivery fee - Only Same-Day (map) delivery
-  const getDeliveryCharge = () => {
-    if (!seller?.deliverySettings?.map || cartItems.length === 0) return 0;
-    
-    const mapOption = seller.deliverySettings.map;
-    return mapOption?.enabled ? Number(mapOption.charge || 0) : 0;
-  };
-  
-  const deliveryFee = getDeliveryCharge();
-  const totalItems = cartItems.reduce((s, i) => s + i.qty, 0);
-  const finalTotal = subtotal + deliveryFee + PLATFORM_FEE;
-
-  /* ─── delivery options helper - Only Same-Day (map) ─── */
-  const getAvailableDeliveryOptions = () => {
-    if (!seller?.deliverySettings?.map?.enabled) return [];
-    
-    return [{
-      id: "map",
-      label: "Same-Day Delivery",
-      charge: seller.deliverySettings.map.charge || 0,
-      desc: "Today by 9 PM"
-    }];
-  };
-
-  /* ─── infinite scroll ─── */
-  const lastProductRef = (node) => {
-    if (loadingMore) return;
-    if (observer.current) observer.current.disconnect();
-    observer.current = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasMore) fetchProducts(true);
-      },
-      { threshold: 1 }
+    setTimeout(
+      () => setCartAnimating(false),
+      400
     );
-    if (node) observer.current.observe(node);
+
+    setCart(
+      (
+        prev: Record<string, number>
+      ) => ({
+        ...prev,
+        [id]: (prev[id] || 0) + 1,
+      })
+    );
   };
 
+  const removeItem = (id: string) => {
+    setCart(
+      (
+        prev: Record<string, number>
+      ) => {
+        const updated = { ...prev };
+
+        updated[id] > 1
+          ? (updated[id] -= 1)
+          : delete updated[id];
+
+        return updated;
+      }
+    );
+  };
+
+  /* ───────────────── FILTER ───────────────── */
+
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((p: Product) => {
+        const matchSearch =
+          p.name
+            ?.toLowerCase()
+            .includes(
+              search.toLowerCase()
+            ) || false;
+
+        const matchCat =
+          categoryFilter === "All"
+            ? true
+            : p.category === categoryFilter;
+
+        return matchSearch && matchCat;
+      }),
+    [products, search, categoryFilter]
+  );
+
+  const cartItems: CartItem[] =
+    Object.entries(cart)
+      .map(([id, qty]) => {
+        const p = products.find(
+          (p: Product) => p.id === id
+        );
+
+        return p
+          ? {
+              ...p,
+              qty,
+            }
+          : null;
+      })
+      .filter(Boolean) as CartItem[];
+
+  const subtotal = cartItems.reduce(
+    (
+      s: number,
+      i: CartItem
+    ) =>
+      s + i.qty * (i.price || 0),
+    0
+  );
+
+  const getDeliveryCharge = () => {
+    if (
+      !seller?.deliverySettings?.map ||
+      cartItems.length === 0
+    ) {
+      return 0;
+    }
+
+    const mapOption =
+      seller.deliverySettings.map;
+
+    return mapOption?.enabled
+      ? Number(mapOption.charge || 0)
+      : 0;
+  };
+
+  const deliveryFee =
+    getDeliveryCharge();
+
+  const totalItems = cartItems.reduce(
+    (
+      s: number,
+      i: CartItem
+    ) => s + i.qty,
+    0
+  );
+
+  const finalTotal =
+    subtotal +
+    deliveryFee +
+    PLATFORM_FEE;
+
+  /* ───────────────── DELIVERY ───────────────── */
+
+  const getAvailableDeliveryOptions =
+    () => {
+      if (
+        !seller?.deliverySettings?.map
+          ?.enabled
+      ) {
+        return [];
+      }
+
+      return [
+        {
+          id: "map",
+          label:
+            "Same-Day Delivery",
+          charge:
+            seller.deliverySettings
+              .map.charge || 0,
+          desc: "Today by 9 PM",
+        },
+      ];
+    };
+
+  const deliveryOptions =
+    getAvailableDeliveryOptions();
+
+  /* ───────────────── INFINITE SCROLL ───────────────── */
+
+  const lastProductRef = (
+    node: HTMLDivElement | null
+  ) => {
+    if (loadingMore) return;
+
+    if (observer.current) {
+      observer.current.disconnect();
+    }
+
+    observer.current =
+      new IntersectionObserver(
+        (entries) => {
+          if (
+            entries[0].isIntersecting &&
+            hasMore
+          ) {
+            fetchProducts(true);
+          }
+        },
+        { threshold: 1 }
+      );
+
+    if (node) {
+      observer.current.observe(node);
+    }
+  };
   // =========================
   // AUTH LOADING
   // =========================
@@ -382,7 +618,7 @@ export default function MongsoShopPage() {
     );
   }
 
-  const deliveryOptions = getAvailableDeliveryOptions();
+ 
 
   return (
     <div className="min-h-screen bg-black text-white pb-32 font-['Inter']">
@@ -461,7 +697,7 @@ export default function MongsoShopPage() {
 
           {/* categories */}
           <div className="flex flex-wrap gap-3">
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.map((c ) => (
               <button
                 key={c}
                 onClick={() => setCategoryFilter(c)}
@@ -531,7 +767,7 @@ export default function MongsoShopPage() {
                     </div>
                     <div className="text-right">
                       <h4 className="text-2xl font-light text-red-500 tracking-wide">
-                        ₹{fmt(product.price)}
+                      ₹{fmt(product.price || 0)}
                       </h4>
                     </div>
                   </div>
@@ -623,7 +859,7 @@ export default function MongsoShopPage() {
 
             {/* ITEMS */}
             <div className="space-y-5">
-              {cartItems.map((item) => (
+             {cartItems.map((item: CartItem) => (
                 <div key={item.id} className="flex gap-4 border-b border-zinc-900 pb-5">
                   <div className="relative w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0">
                     <Image
@@ -643,10 +879,10 @@ export default function MongsoShopPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <h3 className="text-lg font-medium tracking-wide text-white">{item.name}</h3>
-                        <p className="text-zinc-500 text-sm mt-1">₹{fmt(item.price)} × {item.qty}</p>
+                        <p className="text-zinc-500 text-sm mt-1">₹{fmt((item.price || 0) * item.qty)}</p>
                       </div>
                       <div className="text-right">
-                        <h4 className="text-xl font-light text-red-500">₹{fmt(item.price * item.qty)}</h4>
+                        <h4 className="text-xl font-light text-red-500">₹{fmt((item.price || 0) * item.qty)}</h4>
                       </div>
                     </div>
                     <div className="flex items-center gap-4 mt-5 border border-red-600/40 rounded-full w-fit px-4 h-10 bg-black">
