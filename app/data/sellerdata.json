@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "shopName": "Fresh Mart",
+    "status": "Open",
+    "shopImage": "https://images.unsplash.com/photo-1542838132-92c53300491e",
+    "sellerImage": "https://images.unsplash.com/photo-1607746882042-944635dfe10e"
+  },
+  {
+    "id": 2,
+    "shopName": "Daily Needs Store",
+    "status": "Open",
+    "shopImage": "https://images.unsplash.com/photo-1579113800032-c38bd7635818",
+    "sellerImage": "https://images.unsplash.com/photo-1599566150163-29194dcaad36"
+  },
+  {
+    "id": 3,
+    "shopName": "Green Grocery",
+    "status": "Open",
+    "shopImage": "https://images.unsplash.com/photo-1606787366850-de6330128bfc",
+    "sellerImage": "https://images.unsplash.com/photo-1624561172888-ac93c696e10c"
+  },
+  {
+    "id": 4,
+    "shopName": "Daily Needs Store",
+    "status": "Open",
+    "shopImage": "https://images.unsplash.com/photo-1579113800032-c38bd7635818",
+    "sellerImage": "https://images.unsplash.com/photo-1599566150163-29194dcaad36"
+  },
+  {
+    "id": 5,
+    "shopName": "Green Grocery",
+    "status": "Open",
+    "shopImage": "https://images.unsplash.com/photo-1606787366850-de6330128bfc",
+    "sellerImage": "https://images.unsplash.com/photo-1624561172888-ac93c696e10c"
+  }
+]

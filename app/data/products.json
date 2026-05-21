@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "sellerId": 1,
+    "name": "Tomatoes",
+    "price": 30,
+    "quantity": "500g",
+    "stock": 20,
+    "sold": 120,
+    "deliveryprice": 10,
+    "image": "https://images.unsplash.com/photo-1607305387299-a3d9611cd469?w=400"
+  },
+  {
+    "id": 2,
+    "sellerId": 1,
+    "name": "Milk",
+    "price": 60,
+    "quantity": "1L",
+    "stock": 0,
+    "sold": 80,
+    "deliveryprice": 10,
+    "image": "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400"
+  },
+  {
+    "id": 3,
+    "sellerId": 2,
+    "name": "Bread",
+    "price": 40,
+    "quantity": "1 pack",
+    "stock": 15,
+    "sold": 60,
+    "deliveryprice": 10,
+    "image": "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?w=400"
+  }
+]
