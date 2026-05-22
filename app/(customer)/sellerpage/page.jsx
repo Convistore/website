@@ -67,6 +67,16 @@ export default function SellerPage() {
 
   const observer = useRef();
 
+
+  const sortedSellers = useMemo(() => {
+  return [...sellers].sort((a, b) => {
+    // Always pin Mongso on top
+    if (a.sellerName === "Mongso") return -1;
+    if (b.sellerName === "Mongso") return 1;
+
+    return 0;
+  });
+}, [sellers]);
   // =========================
   // FETCH SELLERS
   // =========================
@@ -81,23 +91,20 @@ export default function SellerPage() {
         setLoading(true);
       }
 
-      let q;
+    let q;
 
-      // ONLY FETCH OPEN SELLERS
-      if (loadMore && lastDoc) {
-        q = query(
-          collection(db, "sellers"),
-          where("status", "==", "Open"),
-          startAfter(lastDoc),
-          limit(FETCH_LIMIT)
-        );
-      } else {
-        q = query(
-          collection(db, "sellers"),
-          where("status", "==", "Open"),
-          limit(FETCH_LIMIT)
-        );
-      }
+if (loadMore && lastDoc) {
+  q = query(
+    collection(db, "sellers"),
+    startAfter(lastDoc),
+    limit(FETCH_LIMIT)
+  );
+} else {
+  q = query(
+    collection(db, "sellers"),
+    limit(FETCH_LIMIT)
+  );
+}
 
       const snapshot = await getDocs(q);
 
@@ -333,7 +340,7 @@ export default function SellerPage() {
 
   const filteredSellers =
     useMemo(() => {
-      return sellers.filter(
+    return sortedSellers.filter(
         (seller) => {
           const matchesSearch =
             seller.shopName

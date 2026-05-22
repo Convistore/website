@@ -267,7 +267,7 @@ export default function Navbar() {
   {/* LOGO */}
   <div className="relative w-40 h-40   sm:w-40 sm:h-440 md:w-44 md:h-4 lg:w-50 lg:h-50  transition-all duration-300 group-hover:scale-105">
     <Image
-      src="/ConviLogo.png"
+      src="/conviomart.png"
       alt="Convi Logo"
       fill
       className="object-contain"
@@ -515,6 +515,20 @@ export default function Navbar() {
                 }
                 theme={theme}
               />
+
+              <MobileNavLink
+  href="/customer/leaderboard"
+  icon={
+    <Trophy
+      className={`w-5 h-5 ${theme.accent}`}
+    />
+  }
+  label="Leaderboard"
+  onClick={() =>
+    setMenuOpen(false)
+  }
+  theme={theme}
+/>
             </div>
 
             {/* FOOTER */}

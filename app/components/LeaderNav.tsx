@@ -130,22 +130,7 @@ export default function LeaderNav() {
   </div>
 </Link>
           
-            {/* CTA */}
-            <Link
-              href="/customer/request-product"
-              className="group relative overflow-hidden px-5 py-3 rounded-2xl bg-gradient-to-r from-[#F8E7A1] via-[#D4AF37] to-[#A67C00] text-black font-semibold shadow-[0_10px_35px_rgba(212,175,55,0.35)] hover:scale-[1.03] active:scale-[0.98] transition-all duration-300"
-            >
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-500 bg-white/10" />
-
-              <div className="relative flex items-center gap-2">
-                <span className="text-sm tracking-wide">
-                   Request
-                </span>
-
-                <ChevronRight className="w-4 h-4" />
-              </div>
-
-            </Link>
+          
 
             {/* MOBILE BUTTON */}
             <button

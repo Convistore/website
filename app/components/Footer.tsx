@@ -32,7 +32,7 @@ export default function Footer() {
   {/* LOGO */}
   <div className="relative w-20 h-10 sm:w-20 sm:h-10 md:w-24 md:h-10 lg:w-28 lg:h-10 flex-shrink-0">
     <Image
-      src="/ConviLogo.png"
+      src="/conviomart.png"
       alt="Convi Logo"
       fill
       className="object-contain"

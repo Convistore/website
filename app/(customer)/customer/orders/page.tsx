@@ -362,7 +362,7 @@ export default function OrdersPage() {
         {/* SEARCH */}
         <div className="bg-white border border-gray-200 rounded-3xl p-3 shadow-sm mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gray-100 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center">
               <Search size={20} />
             </div>
 
@@ -378,18 +378,7 @@ export default function OrdersPage() {
               className="flex-1 bg-transparent outline-none text-sm sm:text-base"
             />
 
-            <button
-              onClick={() =>
-                setShowFilters(
-                  !showFilters
-                )
-              }
-              className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-black text-white font-semibold text-sm"
-            >
-              <Filter size={18} />
-              Filters
-              <ChevronDown size={16} />
-            </button>
+           
           </div>
         </div>
 

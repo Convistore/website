@@ -601,7 +601,7 @@ export default function SellerShopPage() {
                   >
                     {product.delivery?.type === "paid"
                       ? `🚚 ₹${product.delivery?.charge} delivery`
-                      : "✨ Free Delivery"}
+                      : "Free Delivery"}
                   </p>
                 </div>
 
