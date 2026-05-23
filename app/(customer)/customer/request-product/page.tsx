@@ -91,7 +91,7 @@ const handleSubmit = async (
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/10 rounded-full px-4 py-2 mb-6 backdrop-blur-md">
               <Sparkles className="w-4 h-4 text-[#2EE6A6]" />
               <span className="text-sm font-medium">
-                Help us improve ConviStore
+                Help us improve ConvioMart
               </span>
             </div>
 
@@ -101,7 +101,7 @@ const handleSubmit = async (
             </h1>
 
             <p className="mt-6 text-gray-300 text-lg leading-relaxed max-w-xl">
-              Request products you want to see on ConviStore. We’ll notify
+              Request products you want to see on ConvioMart. We’ll notify
               nearby sellers and try to make them available for your area.
             </p>
 

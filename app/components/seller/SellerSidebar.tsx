@@ -10,6 +10,8 @@ import { signOut } from "firebase/auth";
 
 import { auth } from "@/lib/firebase";
 
+import { useState } from "react";
+
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -17,6 +19,8 @@ import {
   Settings,
   LogOut,
   ShieldCheck,
+  Menu,
+  X,
 } from "lucide-react";
 
 // =========================
@@ -74,6 +78,12 @@ export default function SellerSidebar() {
   const router = useRouter();
 
   // =========================
+  // SIDEBAR TOGGLE
+  // =========================
+
+  const [collapsed, setCollapsed] = useState(false);
+
+  // =========================
   // LOGOUT
   // =========================
 
@@ -92,25 +102,66 @@ export default function SellerSidebar() {
   };
 
   return (
-    <aside className="w-[290px] h-screen bg-white border-r border-gray-100 flex flex-col sticky top-0">
+    <aside
+      className={`
+        ${
+          collapsed ? "w-[95px]" : "w-[290px]"
+        }
+        h-screen
+        bg-white
+        border-r
+        border-gray-100
+        flex
+        flex-col
+        sticky
+        top-0
+        transition-all
+        duration-300
+      `}
+    >
       {/* HEADER */}
 
-      <div className="h-24 px-6 border-b border-gray-100 flex items-center">
-        <div className="flex items-center gap-3">
-          {/* ICON */}
+      <div
+        className={`
+          h-24
+          px-4
+          border-b
+          border-gray-100
+          flex
+          items-center
+          ${collapsed ? "justify-center" : "justify-between"}
+        `}
+      >
+        {!collapsed && (
+          <div className="flex items-center gap-3">
+            {/* ICON */}
 
-          <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center">
-            <ShieldCheck size={24} />
+            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center">
+              <ShieldCheck size={24} />
+            </div>
+
+            {/* TEXT */}
+
+            <div>
+              <h1 className="text-2xl font-black text-gray-900">
+                Seller
+              </h1>
+
+              <p className="text-sm text-gray-500">
+                Store Panel
+              </p>
+            </div>
           </div>
+        )}
 
-          {/* TEXT */}
+        {/* COLLAPSE BUTTON */}
 
-          <div>
-            <h1 className="text-2xl font-black text-gray-900">Seller</h1>
-
-            <p className="text-sm text-gray-500">Store Panel</p>
-          </div>
-        </div>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-11 h-11 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all"
+        >
+          {collapsed ? <Menu size={20} /> : <X size={20} />}
+        </button>
       </div>
 
       {/* NAVIGATION */}
@@ -121,9 +172,11 @@ export default function SellerSidebar() {
             <div key={sectionIndex}>
               {/* TITLE */}
 
-              <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-3 mb-3">
-                {section.title}
-              </h2>
+              {!collapsed && (
+                <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-3 mb-3">
+                  {section.title}
+                </h2>
+              )}
 
               {/* ITEMS */}
 
@@ -139,41 +192,51 @@ export default function SellerSidebar() {
                       href={item.href}
                       prefetch={true}
                       className={`
-                            flex items-center gap-4
-                            px-4 py-4
-                            rounded-2xl
-                            transition-all duration-200
-                            group
-                            ${
-                              active
-                                ? "bg-black text-white shadow-lg"
-                                : "hover:bg-gray-100 text-gray-700"
-                            }
-                          `}
+                        flex items-center
+                        ${
+                          collapsed
+                            ? "justify-center px-2"
+                            : "gap-4 px-4"
+                        }
+                        py-4
+                        rounded-2xl
+                        transition-all
+                        duration-200
+                        group
+                        ${
+                          active
+                            ? "bg-black text-white shadow-lg"
+                            : "hover:bg-gray-100 text-gray-700"
+                        }
+                      `}
                     >
                       {/* ICON */}
 
                       <div
                         className={`
-                              ${
-                                active
-                                  ? "text-white"
-                                  : "text-gray-500 group-hover:text-black"
-                              }
-                            `}
+                          ${
+                            active
+                              ? "text-white"
+                              : "text-gray-500 group-hover:text-black"
+                          }
+                        `}
                       >
                         <Icon size={22} />
                       </div>
 
                       {/* TEXT */}
 
-                      <div className="flex-1">
-                        <p className="font-semibold">{item.name}</p>
-                      </div>
+                      {!collapsed && (
+                        <div className="flex-1">
+                          <p className="font-semibold">
+                            {item.name}
+                          </p>
+                        </div>
+                      )}
 
                       {/* ACTIVE DOT */}
 
-                      {active && (
+                      {!collapsed && active && (
                         <div className="w-2 h-2 rounded-full bg-white" />
                       )}
                     </Link>
@@ -188,29 +251,65 @@ export default function SellerSidebar() {
       {/* FOOTER */}
 
       <div className="p-4 border-t border-gray-100">
-        <div className="bg-gray-50 rounded-3xl p-4">
+        <div
+          className={`
+            bg-gray-50
+            rounded-3xl
+            p-4
+            transition-all
+            duration-300
+          `}
+        >
           {/* PROFILE */}
 
-          <div className="flex items-center gap-3">
+          <div
+            className={`
+              flex items-center
+              ${collapsed ? "justify-center" : "gap-3"}
+            `}
+          >
             <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-lg">
               S
             </div>
 
-            <div>
-              <h3 className="font-bold">Seller Account</h3>
+            {!collapsed && (
+              <div>
+                <h3 className="font-bold">
+                  Seller Account
+                </h3>
 
-              <p className="text-sm text-gray-500">Store Access</p>
-            </div>
+                <p className="text-sm text-gray-500">
+                  Store Access
+                </p>
+              </div>
+            )}
           </div>
 
           {/* LOGOUT */}
 
           <button
             onClick={handleLogout}
-            className="mt-4 w-full bg-black hover:opacity-90 text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2 transition-all"
+            className={`
+              mt-4
+              w-full
+              bg-black
+              hover:opacity-90
+              text-white
+              py-3
+              rounded-2xl
+              font-semibold
+              flex
+              items-center
+              justify-center
+              ${
+                collapsed ? "" : "gap-2"
+              }
+              transition-all
+            `}
           >
             <LogOut size={18} />
-            Logout
+
+            {!collapsed && "Logout"}
           </button>
         </div>
       </div>

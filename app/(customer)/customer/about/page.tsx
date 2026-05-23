@@ -29,7 +29,7 @@ export default function AboutPage() {
               <Sparkles className="w-4 h-4 text-[#2EE6A6]" />
 
               <span className="text-sm font-semibold text-gray-700">
-                About ConviStore
+                About ConvioMart
               </span>
             </div>
 
@@ -43,7 +43,7 @@ export default function AboutPage() {
 
             {/* DESCRIPTION */}
             <p className="mt-6 text-base sm:text-lg text-gray-600 leading-relaxed max-w-2xl">
-              ConviStore connects customers with nearby local
+              ConvioMart connects customers with nearby local
               sellers and stores for fast, convenient and reliable
               shopping. From groceries and essentials to fresh
               local products , everything is available near you.
@@ -75,7 +75,7 @@ export default function AboutPage() {
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-black text-[#0F172A]">
-            Why Choose ConviStore?
+            Why Choose ConvioMart?
           </h2>
 
           <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
@@ -174,7 +174,7 @@ export default function AboutPage() {
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-              Start Shopping Smarter with ConviStore
+              Start Shopping Smarter with ConvioMart
             </h2>
 
             <p className="mt-5 text-gray-300 text-base sm:text-lg leading-relaxed">

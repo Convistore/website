@@ -53,7 +53,7 @@ ${message}
               <MessageCircle className="w-4 h-4 text-[#2EE6A6]" />
 
               <span className="text-sm font-semibold text-gray-700">
-                Contact ConviStore
+                Contact ConvioMart
               </span>
             </div>
 

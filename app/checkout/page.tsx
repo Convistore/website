@@ -113,7 +113,13 @@ export default function CheckoutPage() {
           setAddress({
             name: customer.name || "",
             phone: customer.phone || "",
-            addressLine: `${customer.address.house || ""}, ${customer.address.area || ""}, ${customer.address.landmark || ""}`,
+           addressLine: [
+  customer.address.house,
+  customer.address.area,
+  customer.address.landmark,
+]
+  .filter(Boolean)
+  .join(", "),
             city: customer.address.city || "",
           });
           if (customer.address.house || customer.address.area) {
@@ -609,24 +615,36 @@ const generateDeliverySlots = () => {
 
           {isEditing ? (
             <div className="space-y-3">
+              <label htmlFor="name" className="block text-sm font-medium text-[#0F172A]">
+                Full Name
+              </label>
               <input
                 placeholder="Full Name"
                 value={address.name}
                 onChange={(e) => setAddress({ ...address, name: e.target.value })}
                 className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
               />
+              <label htmlFor="phone" className="block text-sm font-medium text-[#0F172A]">  
+                Phone Number  
+              </label>
               <input
                 placeholder="Phone Number"
                 value={address.phone}
                 onChange={(e) => setAddress({ ...address, phone: e.target.value })}
                 className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
               />
+              <label htmlFor="address" className="block text-sm font-medium text-[#0F172A]">
+                Address
+              </label>
               <input
                 placeholder="Full Address"
                 value={address.addressLine}
                 onChange={(e) => setAddress({ ...address, addressLine: e.target.value })}
                 className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
               />
+              <label htmlFor="city" className="block text-sm font-medium text-[#0F172A]">
+                City
+              </label>
               <input
                 placeholder="City"
                 value={address.city}
@@ -642,10 +660,10 @@ const generateDeliverySlots = () => {
             </div>
           ) : (
             <div className="text-sm text-[#0F172A] space-y-1">
-              <p className="font-medium">{address.name}</p>
-              <p>{address.phone}</p>
-              <p>{address.addressLine}</p>
-              <p>{address.city}</p>
+              <p className="font-medium">Name : {address.name}</p>
+              <p>Phone : {address.phone}</p>
+              <p>Address : {address.addressLine}</p>
+              <p>City : {address.city}</p>
             </div>
           )}
         </div>

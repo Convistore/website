@@ -147,11 +147,11 @@ const OrderCard = memo(
     return (
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300">
         {/* HEADER */}
-        <div className="p-6 border-b bg-gradient-to-r from-white to-gray-50">
+      <div className="p-4 sm:p-6 border-b bg-gradient-to-r from-white to-gray-50">
           <div className="flex flex-col xl:flex-row justify-between gap-5">
             <div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <h2 className="text-xl font-black text-gray-900">
+<div className="flex flex-col xl:flex-row justify-between gap-4 sm:gap-5">
+       <h2 className="text-lg sm:text-xl font-black text-gray-900 break-all">
                   {order.orderId}
                 </h2>
 
@@ -164,7 +164,7 @@ const OrderCard = memo(
                 </span>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mt-5 text-sm text-gray-600">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-5 text-xs sm:text-sm text-gray-600">
                 <div className="flex items-center gap-2">
                   <User size={16} />
 
@@ -190,7 +190,7 @@ const OrderCard = memo(
             <div className="text-right">
               <p className="text-sm text-gray-400">Total Amount</p>
 
-              <h2 className="text-4xl font-black text-gray-900 mt-1">
+           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 mt-1 break-words">
                 ₹{order.analytics?.totalAmount || 0}
               </h2>
 
@@ -226,9 +226,9 @@ const OrderCard = memo(
                   key={index}
                   className="border border-gray-100 rounded-3xl p-4 bg-gray-50"
                 >
-                  <div className="flex flex-col lg:flex-row gap-5">
+<div className="flex flex-col lg:flex-row gap-4 sm:gap-5">
                     {/* IMAGE */}
-                    <div className="relative w-full lg:w-40 h-40 rounded-2xl overflow-hidden bg-white">
+<div className="relative w-full sm:w-48 lg:w-40 h-48 sm:h-40 rounded-2xl overflow-hidden bg-white mx-auto lg:mx-0">
                       {(product?.images?.[0] || item.image) && (
                         <Image
                           loading="lazy"
@@ -248,7 +248,7 @@ const OrderCard = memo(
                     <div className="flex-1">
                       <div className="flex flex-col md:flex-row justify-between gap-4">
                         <div>
-                          <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                             {product?.name}
                           </h2>
 
@@ -267,7 +267,7 @@ const OrderCard = memo(
                       </div>
 
                       {/* PRODUCT GRID */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-5 sm:mt-6">
                         <div className="bg-white rounded-2xl p-4">
                           <p className="text-xs text-gray-400">Category</p>
 
@@ -276,7 +276,7 @@ const OrderCard = memo(
                           </h3>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-4">
+                      <div className="bg-white rounded-2xl p-3 sm:p-4 overflow-hidden">
                           <p className="text-xs text-gray-400">Unit</p>
 
                           <h3 className="font-semibold mt-2">
@@ -284,7 +284,7 @@ const OrderCard = memo(
                           </h3>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-4">
+                  <div className="bg-white rounded-2xl p-3 sm:p-4 overflow-hidden">
                           <p className="text-xs text-gray-400">Quantity</p>
 
                           <h3 className="font-semibold mt-2">
@@ -292,7 +292,7 @@ const OrderCard = memo(
                           </h3>
                         </div>
 
-                        <div className="bg-white rounded-2xl p-4">
+                      <div className="bg-white rounded-2xl p-3 sm:p-4 overflow-hidden">
                           <p className="text-xs text-gray-400">Stock</p>
 
                           <h3 className="font-semibold mt-2">
@@ -320,7 +320,7 @@ const OrderCard = memo(
         )}
 
         {/* ACTIONS */}
-        <div className="p-6 border-t bg-gray-50 flex flex-wrap gap-3">
+        <div className="p-4 sm:p-6 border-t bg-gray-50 flex flex-col sm:flex-row flex-wrap gap-3">
           {order.status === "pending" && (
             <>
               <button
@@ -338,7 +338,7 @@ const OrderCard = memo(
         "Are you sure you want to accept this order?",
     })
   }
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-2xl font-semibold transition-all"
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl text-sm sm:text-base font-semibold transition-all"
               >
                 Accept Order
               </button>
@@ -891,73 +891,73 @@ if (authLoading) {
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F7FB] p-4 md:p-6">
-      <div className="max-w-7xl mx-auto">
+<div className="min-h-screen bg-[#F5F7FB] px-3 py-4 sm:px-4 md:px-6">
+    <div className="max-w-7xl mx-auto overflow-x-hidden">
         {/* HEADER */}
         <div className="mb-8">
-          <h1 className="text-4xl font-black text-gray-900">
+    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-gray-900 leading-tight">
             Orders Dashboard
           </h1>
 
-          <p className="text-gray-500 mt-2 text-lg">
+      <p className="text-sm sm:text-base md:text-lg text-gray-500 mt-2">
             Manage and track all seller orders
           </p>
         </div>
 
         {/* ANALYTICS */}
-        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden">
             <TrendingUp className="mb-3" />
 
             <p className="text-sm text-gray-500">Revenue</p>
 
-            <h2 className="text-3xl font-black mt-2">
+<h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 break-words">
               ₹{analytics.totalRevenue}
             </h2>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+          <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden">
             <ShoppingBag className="mb-3" />
 
             <p className="text-sm text-gray-500">Orders</p>
 
-            <h2 className="text-3xl font-black mt-2">
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 break-words">
               {analytics.totalOrders}
             </h2>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+         <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden">
             <CalendarDays className="mb-3" />
 
             <p className="text-sm text-gray-500">Today Orders</p>
 
-            <h2 className="text-3xl font-black mt-2">
+       <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 break-words">
               {analytics.todayOrders}
             </h2>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+   <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden">
             <Clock3 className="mb-3" />
 
             <p className="text-sm text-gray-500">Pending</p>
 
-            <h2 className="text-3xl font-black mt-2">{analytics.pending}</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 break-words">{analytics.pending}</h2>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 shadow-sm">
+     <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-sm overflow-hidden">
             <Package className="mb-3" />
 
             <p className="text-sm text-gray-500">Delivered</p>
 
-            <h2 className="text-3xl font-black mt-2">{analytics.delivered}</h2>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 break-words">{analytics.delivered}</h2>
           </div>
         </div>
 
         {/* SEARCH + FILTERS */}
         <div className="bg-white rounded-[32px] p-5 shadow-sm mb-8">
-          <div className="flex flex-col xl:flex-row gap-5 justify-between">
+<div className="flex flex-col xl:flex-row gap-4 sm:gap-5 justify-between">
             {/* SEARCH */}
-            <div className="relative w-full xl:w-96">
+         <div className="relative w-full xl:w-96">
               <Search
                 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
                 size={18}
@@ -968,12 +968,12 @@ if (authLoading) {
                 placeholder="Search orders..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 rounded-2xl border border-gray-200 outline-none"
+               className="w-full pl-11 pr-4 py-3 sm:py-4 rounded-2xl border border-gray-200 outline-none text-sm sm:text-base"
               />
             </div>
 
             {/* DATE FILTERS */}
-            <div className="flex flex-wrap gap-3">
+           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
                 {
                   label: "Today",
@@ -995,7 +995,7 @@ if (authLoading) {
                 <button
                   key={item.value}
                   onClick={() => setDateFilter(item.value)}
-                  className={`px-5 py-3 rounded-2xl font-semibold transition-all ${
+                 className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl whitespace-nowrap text-sm sm:text-base font-semibold transition-all ${
                     dateFilter === item.value
                       ? "bg-black text-white"
                       : "bg-gray-100 text-gray-700"
@@ -1009,7 +1009,7 @@ if (authLoading) {
 
           {/* STATUS */}
 {/* STATUS */}
-<div className="flex gap-3 overflow-x-auto mt-6 pb-2">
+<div className="flex gap-2 sm:gap-3 overflow-x-auto mt-5 sm:mt-6 pb-2 scrollbar-hide">
   {ORDER_STATUSES.map(
     (status) => {
       const count =
@@ -1069,7 +1069,7 @@ if (authLoading) {
               status,
             )
           }
-          className={`relative overflow-hidden px-5 py-3 rounded-2xl whitespace-nowrap font-semibold flex items-center gap-2 transition-all duration-300 border ${
+        className={`relative overflow-hidden px-3 sm:px-5 py-2.5 sm:py-3 rounded-2xl whitespace-nowrap text-sm sm:text-base font-semibold flex items-center gap-2 transition-all duration-300 border shrink-0 ${
             isFast
               ? selectedStatus ===
                 status

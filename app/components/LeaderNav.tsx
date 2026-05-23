@@ -70,7 +70,7 @@ export default function LeaderNav() {
               </h1>
 
               <p className="text-[11px] text-zinc-500 tracking-wide">
-                Top ranked legends
+                Top ranked Spenders
               </p>
             </div>
           </Link>

@@ -295,12 +295,41 @@ const avatarUrl = (
         }
         .lb-subtitle{font-size:11px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-top:3px;}
         .lb-filter{
-          display:flex;align-items:center;gap:8px;
-          background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px 14px;
-        }
-        .lb-filter select{background:transparent;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;cursor:pointer;}
-        .lb-filter option{background:#111114;}
+  display:flex;
+  align-items:center;
+  gap:6px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:6px 8px;
+}
 
+/* Small screens */
+@media (max-width: 640px){
+  .lb-filter{
+    padding:4px 6px; /* smaller height & width */
+    gap:4px;
+    border-radius:10px;
+  }
+
+  .lb-filter select{
+    font-size:12px;
+  }
+}
+
+.lb-filter select{
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  outline:none;
+  cursor:pointer;
+}
+
+.lb-filter option{
+  background:#111114;
+}
         .lb-body{max-width:680px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
 
         /* PODIUM */
@@ -481,11 +510,11 @@ const avatarUrl = (
         <div className="lb-header">
           <div>
             <div className="lb-title">Leaderboard</div>
-            <div className="lb-subtitle">Elite Spenders · {months[selectedMonth]} {selectedYear}</div>
+            <div className="lb-subtitle">Elite Customers · {months[selectedMonth]} {selectedYear}</div>
           </div>
           <div className="lb-filter">
             <Calendar size={13} color="var(--gold)" />
-            <select value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
+            <select   value={selectedMonth} onChange={(e) => setSelectedMonth(Number(e.target.value))}>
               {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
             </select>
             <select value={selectedYear} onChange={(e) => setSelectedYear(Number(e.target.value))}>

@@ -302,12 +302,12 @@ const deleteImageFromImageKit = async (
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] p-5">
+   <div className="min-h-screen bg-[#F8FAFC] px-3 py-4 sm:p-5 overflow-x-hidden">
       {/* HEADER */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
-        <h1 className="text-3xl font-bold">My Products</h1>
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+       <h1 className="text-2xl sm:text-3xl font-bold">My Products</h1>
 
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
           {/* SEARCH */}
           <input
             type="text"
@@ -317,7 +317,7 @@ const deleteImageFromImageKit = async (
               setSearch(e.target.value);
               setCurrentPage(1);
             }}
-            className="border rounded-xl px-4 py-2 bg-white"
+           className="border rounded-xl px-4 py-2.5 bg-white w-full sm:w-auto text-sm sm:text-base"
           />
 
           {/* CATEGORY FILTER */}
@@ -351,8 +351,8 @@ const deleteImageFromImageKit = async (
       </div>
 
       {/* TABLE */}
-      <div className="overflow-x-auto bg-white rounded-2xl shadow">
-        <table className="w-full min-w-[1000px]">
+<div className="overflow-x-auto bg-white rounded-2xl shadow border">
+      <table className="w-full min-w-[850px] lg:min-w-[1000px] text-sm">
           <thead className="bg-gray-100 text-left">
             <tr>
               <th className="p-4">Image</th>
@@ -370,7 +370,7 @@ const deleteImageFromImageKit = async (
           <tbody>
             {paginatedProducts.map((product) => (
               <tr key={product.id} className="border-t">
-                <td className="p-4">
+                <td className="p-3 sm:p-4 whitespace-nowrap">
                   <img
                     loading="lazy"
                    src={`${
@@ -379,35 +379,35 @@ const deleteImageFromImageKit = async (
     : product?.images?.[0]?.url
 }?tr=w-300,h-300,q-60,f-webp`}
                     alt="product"
-                    className="w-16 h-16 object-cover rounded-xl border"
+                   className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border shrink-0"
                   />
                 </td>
 
-                <td className="p-4 font-medium">{product.name}</td>
+                <td className="p-3 sm:p-4 whitespace-nowrap">{product.name}</td>
 
-                <td className="p-4">{product.category}</td>
+                <td className="p-3 sm:p-4 whitespace-nowrap">{product.category}</td>
 
-                <td className="p-4">₹{product.price}</td>
+                <td className="p-3 sm:p-4 whitespace-nowrap">₹{product.price}</td>
 
-                <td className="p-4">{product.stock}</td>
+                <td className="p-3 sm:p-4 whitespace-nowrap">{product.stock}</td>
 
-                <td className="p-4">{product.unit}</td>
+                <td className="p-3 sm:p-4 whitespace-nowrap">{product.unit}</td>
 
-                <td className="p-4">
+                <td className="p-3 sm:p-4 whitespace-nowrap">
                   {product.delivery?.type === "free"
                     ? "Free"
                     : `₹${product.delivery?.charge}`}
                 </td>
 
-                <td className="p-4">
+                <td className="p-3 sm:p-4 whitespace-nowrap">
                   {product.status?.isAvailable ? "Available" : "Out of Stock"}
                 </td>
 
-                <td className="p-4">
+                <td className="p-3 sm:p-4 whitespace-nowrap">
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSelectedProduct(product)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-lg"
+            className="bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
                     >
                       Edit
                     </button>
@@ -417,7 +417,7 @@ const deleteImageFromImageKit = async (
                         setShowDeleteModal(true);
                         setProductToDelete(product);
                       }}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg"
+                     className="bg-red-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
                     >
                       Delete
                     </button>
@@ -438,11 +438,11 @@ const deleteImageFromImageKit = async (
       </div>
 
       {/* PAGINATION */}
-      <div className="flex items-center justify-center gap-3 mt-6">
+     <div className="flex flex-wrap items-center justify-center gap-3 mt-6 text-sm sm:text-base">
         <button
           disabled={currentPage === 1}
           onClick={() => setCurrentPage((prev) => prev - 1)}
-          className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50"
+className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:text-base"
         >
           Back
         </button>
@@ -454,7 +454,7 @@ const deleteImageFromImageKit = async (
         <button
           disabled={currentPage === totalPages || totalPages === 0}
           onClick={() => setCurrentPage((prev) => prev + 1)}
-          className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50"
+className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:text-base"
         >
           Next
         </button>
@@ -463,9 +463,9 @@ const deleteImageFromImageKit = async (
       {/* EDIT MODAL */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white w-full max-w-2xl rounded-2xl p-5 max-h-[90vh] overflow-y-auto">
+<div className="bg-white w-full max-w-2xl rounded-2xl p-4 sm:p-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-2xl font-bold">Edit Product</h2>
+             <h2 className="text-xl sm:text-2xl font-bold">Edit Product</h2>
 
               <button
                 onClick={() => setSelectedProduct(null)}
@@ -717,7 +717,7 @@ const deleteImageFromImageKit = async (
     : image?.url
 }?tr=w-500,h-500,q-70,f-webp`}
                           alt="product"
-                          className="w-full h-32 object-cover rounded-xl border"
+                          className="w-full h-24 sm:h-32 object-cover rounded-xl border"
                         />
 
                         <button
@@ -802,7 +802,7 @@ const deleteImageFromImageKit = async (
       {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm">
+       <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm">
             <h2 className="text-xl font-bold mb-3">Delete Product?</h2>
 
             <p className="text-gray-600 mb-5">This action cannot be undone.</p>

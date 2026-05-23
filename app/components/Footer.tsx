@@ -127,7 +127,7 @@ export default function Footer() {
                   <Mail className="w-4 h-4 text-[#2EE6A6]" />
                 }
                 title="Email"
-                value="support@convistore.com"
+                value="convistoreofficial@gmail.com"
               />
 
               <ContactItem
@@ -135,7 +135,7 @@ export default function Footer() {
                   <MapPin className="w-4 h-4 text-[#2EE6A6]" />
                 }
                 title="Location"
-                value="India"
+                value="New Delhi, India"
               />
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row items-center justify-center gap-4">
           <p className="text-sm text-gray-500 text-center md:text-left">
             © {new Date().getFullYear()}{" "}
-            ConviStore. All rights
+            ConvioMart. All rights
             reserved.
           </p>
 

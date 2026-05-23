@@ -274,9 +274,9 @@ const handleLogout = async () => {
               ✅ {user?.isBlocked ? "Blocked" : "Active"}
             </div>
 
-            <div className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-xl">
-              👤 {user?.role}
-            </div>
+          <div className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold backdrop-blur-xl capitalize">
+  👤 {user?.role}
+</div>
           </div>
         </div>
       </div>

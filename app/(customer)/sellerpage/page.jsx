@@ -522,7 +522,7 @@ if (loadMore && lastDoc) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 -mt-10 sm:-mt-14 relative z-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4 -mt-10 sm:-mt-14 relative z-20">
 
         {/* CONTROLS - Sticky on desktop */}
         <div className="sticky top-0 sm:top-4 z-40 mb-6 sm:mb-8">
@@ -635,14 +635,8 @@ if (loadMore && lastDoc) {
                     </div>
                   )}
 
-                  {/* FAVORITE */}
-                  <button
-                    onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 z-10 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-white/20 backdrop-blur-xl border border-white/20 text-white text-lg transition hover:scale-110 hover:bg-white hover:text-red-500"
-                  >
-                    ♡
-                  </button>
-
+        
+                 
                   {/* SHOP INFO OVERLAY */}
                   <div className="absolute bottom-3 sm:bottom-4 left-3 sm:left-4 right-3 sm:right-4 z-10">
                     <h2 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white tracking-tight drop-shadow-sm">
