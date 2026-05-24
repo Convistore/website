@@ -62,7 +62,7 @@ export default function AddProductPage() {
   const [showCategories, setShowCategories] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+
   const [shopOpen, setShopOpen] = useState(true);
   // =========================
   // DELIVERY SETTINGS
@@ -387,11 +387,7 @@ const saveShopStatus = async () => {
 
       return;
     }
-    if (!acceptedTerms) {
-      alert("Please accept Seller Terms & Conditions");
-
-      return;
-    }
+    
     try {
       setLoading(true);
 
