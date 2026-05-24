@@ -4,7 +4,10 @@
 
 import Link from "next/link";
 
-import { usePathname, useRouter } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 
 import { signOut } from "firebase/auth";
 
@@ -29,47 +32,32 @@ import {
 
 const navItems = [
   {
-    title: "Main",
-    items: [
-      {
-        name: "Dashboard",
-        href: "/add-product",
-        icon: LayoutDashboard,
-      },
-
-      {
-        name: "Products",
-        href: "/my-products",
-        icon: ShoppingCart,
-      },
-    ],
+    name: "Dashboard",
+    href: "/add-product",
+    icon: LayoutDashboard,
   },
 
   {
-    title: "Management",
-    items: [
-      {
-        name: "Orders",
-        href: "/orders",
-        icon: Package,
-      },
-    ],
+    name: "Products",
+    href: "/my-products",
+    icon: ShoppingCart,
   },
 
   {
-    title: "System",
-    items: [
-      {
-        name: "Settings",
-        href: "/account",
-        icon: Settings,
-      },
-    ],
+    name: "Orders",
+    href: "/orders",
+    icon: Package,
+  },
+
+  {
+    name: "Settings",
+    href: "/account",
+    icon: Settings,
   },
 ];
 
 // =========================
-// SIDEBAR
+// COMPONENT
 // =========================
 
 export default function SellerSidebar() {
@@ -77,11 +65,8 @@ export default function SellerSidebar() {
 
   const router = useRouter();
 
-  // =========================
-  // SIDEBAR TOGGLE
-  // =========================
-
-  const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenu, setMobileMenu] =
+    useState(false);
 
   // =========================
   // LOGOUT
@@ -91,7 +76,9 @@ export default function SellerSidebar() {
     try {
       await signOut(auth);
 
-      alert("✅ Logged out successfully");
+      alert(
+        "✅ Logged out successfully",
+      );
 
       router.push("/login");
     } catch (err) {
@@ -102,217 +89,233 @@ export default function SellerSidebar() {
   };
 
   return (
-    <aside
-      className={`
-        ${
-          collapsed ? "w-[95px]" : "w-[290px]"
-        }
-        h-screen
-        bg-white
-        border-r
-        border-gray-100
-        flex
-        flex-col
-        sticky
-        top-0
-        transition-all
-        duration-300
-      `}
-    >
-      {/* HEADER */}
+    <>
+      {/* ========================= */}
+      {/* TOP NAVBAR */}
+      {/* ========================= */}
 
-      <div
-        className={`
-          h-24
-          px-4
-          border-b
-          border-gray-100
-          flex
-          items-center
-          ${collapsed ? "justify-center" : "justify-between"}
-        `}
-      >
-        {!collapsed && (
+      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+        <div className="h-16 lg:h-20 px-4 lg:px-6 flex items-center justify-between">
+          {/* LEFT */}
+
           <div className="flex items-center gap-3">
-            {/* ICON */}
+            {/* MOBILE MENU */}
 
-            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center">
-              <ShieldCheck size={24} />
+            <button
+              onClick={() =>
+                setMobileMenu(
+                  !mobileMenu,
+                )
+              }
+              className="lg:hidden w-11 h-11 rounded-2xl bg-black text-white flex items-center justify-center shadow-md"
+            >
+              {mobileMenu ? (
+                <X size={20} />
+              ) : (
+                <Menu size={20} />
+              )}
+            </button>
+
+            {/* LOGO */}
+
+            <div className="w-11 h-11 lg:w-12 lg:h-12 rounded-2xl bg-black text-white flex items-center justify-center shadow-md">
+              <ShieldCheck
+                size={22}
+              />
             </div>
 
             {/* TEXT */}
 
             <div>
-              <h1 className="text-2xl font-black text-gray-900">
-                Seller
+              <h1 className="text-lg lg:text-2xl font-black text-gray-900 leading-none">
+                Seller Panel
               </h1>
 
-              <p className="text-sm text-gray-500">
-                Store Panel
+              <p className="text-xs lg:text-sm text-gray-500 mt-1">
+                Store Management
               </p>
             </div>
           </div>
-        )}
 
-        {/* COLLAPSE BUTTON */}
+          {/* DESKTOP NAVIGATION */}
 
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="w-11 h-11 rounded-2xl bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all"
-        >
-          {collapsed ? <Menu size={20} /> : <X size={20} />}
-        </button>
-      </div>
+          <div className="hidden lg:flex items-center gap-3">
+            {navItems.map((item) => {
+              const Icon = item.icon;
 
-      {/* NAVIGATION */}
+              const active =
+                pathname === item.href;
 
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="space-y-8">
-          {navItems.map((section, sectionIndex) => (
-            <div key={sectionIndex}>
-              {/* TITLE */}
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    flex
+                    items-center
+                    gap-2
+                    px-5
+                    py-3
+                    rounded-2xl
+                    font-semibold
+                    transition-all
+                    duration-200
+                    ${
+                      active
+                        ? "bg-black text-white shadow-lg"
+                        : "hover:bg-gray-100 text-gray-700"
+                    }
+                  `}
+                >
+                  <Icon size={18} />
 
-              {!collapsed && (
-                <h2 className="text-xs font-bold uppercase tracking-wider text-gray-400 px-3 mb-3">
-                  {section.title}
-                </h2>
-              )}
+                  <span>
+                    {item.name}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
 
-              {/* ITEMS */}
+          {/* RIGHT */}
 
-              <div className="space-y-2">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
+          <div className="flex items-center gap-3">
+            {/* PROFILE */}
 
-                  const active = pathname === item.href;
-
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      prefetch={true}
-                      className={`
-                        flex items-center
-                        ${
-                          collapsed
-                            ? "justify-center px-2"
-                            : "gap-4 px-4"
-                        }
-                        py-4
-                        rounded-2xl
-                        transition-all
-                        duration-200
-                        group
-                        ${
-                          active
-                            ? "bg-black text-white shadow-lg"
-                            : "hover:bg-gray-100 text-gray-700"
-                        }
-                      `}
-                    >
-                      {/* ICON */}
-
-                      <div
-                        className={`
-                          ${
-                            active
-                              ? "text-white"
-                              : "text-gray-500 group-hover:text-black"
-                          }
-                        `}
-                      >
-                        <Icon size={22} />
-                      </div>
-
-                      {/* TEXT */}
-
-                      {!collapsed && (
-                        <div className="flex-1">
-                          <p className="font-semibold">
-                            {item.name}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* ACTIVE DOT */}
-
-                      {!collapsed && active && (
-                        <div className="w-2 h-2 rounded-full bg-white" />
-                      )}
-                    </Link>
-                  );
-                })}
+            <div className="hidden sm:flex items-center gap-3 bg-gray-100 rounded-2xl px-3 py-2">
+              <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center font-bold">
+                S
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
-      {/* FOOTER */}
-
-      <div className="p-4 border-t border-gray-100">
-        <div
-          className={`
-            bg-gray-50
-            rounded-3xl
-            p-4
-            transition-all
-            duration-300
-          `}
-        >
-          {/* PROFILE */}
-
-          <div
-            className={`
-              flex items-center
-              ${collapsed ? "justify-center" : "gap-3"}
-            `}
-          >
-            <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-lg">
-              S
-            </div>
-
-            {!collapsed && (
-              <div>
-                <h3 className="font-bold">
-                  Seller Account
+              <div className="hidden md:block">
+                <h3 className="text-sm font-bold text-gray-900 leading-none">
+                  Seller
                 </h3>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500 mt-1">
                   Store Access
                 </p>
               </div>
-            )}
+            </div>
+
+            {/* LOGOUT */}
+
+            <button
+              onClick={handleLogout}
+              className="bg-black hover:opacity-90 text-white px-4 lg:px-5 py-3 rounded-2xl font-semibold flex items-center gap-2 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <LogOut size={18} />
+
+              <span className="hidden sm:block">
+                Logout
+              </span>
+            </button>
           </div>
+        </div>
 
-          {/* LOGOUT */}
+        {/* ========================= */}
+        {/* MOBILE MENU */}
+        {/* ========================= */}
 
-          <button
-            onClick={handleLogout}
+        <div
+          className={`
+            lg:hidden
+            overflow-hidden
+            transition-all
+            duration-300
+            ${
+              mobileMenu
+                ? "max-h-[500px] opacity-100 border-t border-gray-100"
+                : "max-h-0 opacity-0 pointer-events-none"
+            }
+          `}
+        >
+          <div
             className={`
-              mt-4
-              w-full
-              bg-black
-              hover:opacity-90
-              text-white
-              py-3
-              rounded-2xl
-              font-semibold
-              flex
-              items-center
-              justify-center
+              p-4
+              space-y-3
+              bg-white
               ${
-                collapsed ? "" : "gap-2"
+                mobileMenu
+                  ? "block"
+                  : "hidden"
               }
-              transition-all
             `}
           >
-            <LogOut size={18} />
+            {navItems.map((item) => {
+              const Icon = item.icon;
 
-            {!collapsed && "Logout"}
-          </button>
+              const active =
+                pathname === item.href;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() =>
+                    setMobileMenu(
+                      false,
+                    )
+                  }
+                  className={`
+                    flex
+                    items-center
+                    gap-4
+                    px-4
+                    py-4
+                    rounded-2xl
+                    font-semibold
+                    transition-all
+                    duration-200
+                    ${
+                      active
+                        ? "bg-black text-white"
+                        : "bg-gray-50 hover:bg-gray-100 text-gray-700"
+                    }
+                  `}
+                >
+                  <Icon size={20} />
+
+                  <span>
+                    {item.name}
+                  </span>
+                </Link>
+              );
+            })}
+
+            {/* MOBILE PROFILE */}
+
+            <div className="bg-gray-50 rounded-3xl p-4 mt-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-black text-white flex items-center justify-center font-bold text-lg">
+                  S
+                </div>
+
+                <div>
+                  <h3 className="font-bold text-gray-900">
+                    Seller Account
+                  </h3>
+
+                  <p className="text-sm text-gray-500">
+                    Store Access
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={
+                  handleLogout
+                }
+                className="mt-4 w-full bg-black text-white py-3 rounded-2xl font-semibold flex items-center justify-center gap-2"
+              >
+                <LogOut size={18} />
+
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    </aside>
+      </header>
+    </>
   );
 }

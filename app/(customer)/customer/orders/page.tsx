@@ -603,6 +603,18 @@ export default function OrdersPage() {
                         }
                       </p>
                     </div>
+                    {/* REJECTION REASON */}
+{order.rejectionReason && (
+  <div className="bg-red-50 rounded-2xl border border-red-200 p-4 mt-4">
+    <p className="text-xs uppercase tracking-wide text-red-500 font-medium">
+      Rejection Reason
+    </p>
+
+    <p className="text-sm text-red-700 mt-2 leading-relaxed break-words font-medium">
+      {order.rejectionReason}
+    </p>
+  </div>
+)}
                   </div>
                 </div>
               )

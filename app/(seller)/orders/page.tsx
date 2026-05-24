@@ -144,6 +144,16 @@ const OrderCard = memo(
     title: "",
     message: "",
   });
+
+  const [rejectModal, setRejectModal] = useState<{
+  open: boolean;
+  orderId: string;
+  reason: string;
+}>({
+  open: false,
+  orderId: "",
+  reason: "",
+});
     return (
       <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300">
         {/* HEADER */}
@@ -321,7 +331,10 @@ const OrderCard = memo(
 
         {/* ACTIONS */}
         <div className="p-4 sm:p-6 border-t bg-gray-50 flex flex-col sm:flex-row flex-wrap gap-3">
-          {order.status === "pending" && (
+{(order.status === "pending" ||
+  (order.delivery?.type === "fast" &&
+    order.status !== "accepted" &&
+    order.status !== "delivered")) && (
             <>
               <button
   onClick={() =>
@@ -343,12 +356,18 @@ const OrderCard = memo(
                 Accept Order
               </button>
 
-              <button
-                onClick={() => updateOrderStatus(order.id, "rejected")}
-                className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-2xl font-semibold transition-all"
-              >
-                Reject Order
-              </button>
+             <button
+  onClick={() =>
+    setRejectModal({
+      open: true,
+      orderId: order.id,
+      reason: "",
+    })
+  }
+  className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-2xl font-semibold transition-all"
+>
+  Reject Order
+</button>
             </>
           )}
 
@@ -426,6 +445,73 @@ const OrderCard = memo(
           }`}
         >
           Yes Proceed
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+{/* REJECT MODAL */}
+{rejectModal.open && (
+  <div className="fixed inset-0 bg-black/50 z-[110] flex items-center justify-center p-4">
+    <div className="bg-white rounded-[32px] w-full max-w-md p-6 shadow-2xl">
+      <h2 className="text-2xl font-black text-gray-900">
+        Reject Order
+      </h2>
+
+      <p className="text-gray-500 mt-3">
+        Please provide a rejection reason.
+      </p>
+
+      <textarea
+        value={rejectModal.reason}
+        onChange={(e) =>
+          setRejectModal((prev) => ({
+            ...prev,
+            reason: e.target.value,
+          }))
+        }
+        placeholder="Enter rejection reason..."
+        className="w-full mt-5 border border-gray-200 rounded-2xl p-4 outline-none resize-none h-32"
+      />
+
+      <div className="flex gap-3 mt-8">
+        {/* CANCEL */}
+        <button
+          onClick={() =>
+            setRejectModal({
+              open: false,
+              orderId: "",
+              reason: "",
+            })
+          }
+          className="flex-1 border border-gray-200 hover:bg-gray-100 py-3 rounded-2xl font-semibold transition-all"
+        >
+          Cancel
+        </button>
+
+        {/* CONFIRM */}
+        <button
+          disabled={!rejectModal.reason.trim()}
+          onClick={async () => {
+            await updateOrderStatus(
+              rejectModal.orderId,
+              "rejected",
+              rejectModal.reason,
+            );
+
+            setRejectModal({
+              open: false,
+              orderId: "",
+              reason: "",
+            });
+          }}
+          className={`flex-1 py-3 rounded-2xl font-semibold text-white transition-all ${
+            rejectModal.reason.trim()
+              ? "bg-red-500 hover:bg-red-600"
+              : "bg-gray-300 cursor-not-allowed"
+          }`}
+        >
+          Reject Order
         </button>
       </div>
     </div>
@@ -716,22 +802,40 @@ useEffect(() => {
   // UPDATE STATUS
   // =========================
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
+const updateOrderStatus = async (
+  orderId: string,
+  status: string,
+  rejectionReason?: string,
+) => {
     try {
       const orderRef = doc(db, "purchases", orderId);
 
-      await updateDoc(orderRef, {
-        status,
-        updatedAt: serverTimestamp(),
-      });
+ await updateDoc(orderRef, {
+  status,
 
+  updatedAt: serverTimestamp(),
+
+  rejectionReason:
+    status === "rejected"
+      ? rejectionReason
+      : "",
+
+  ...(status === "delivered" && {
+    paymentStatus: "paid",
+  }),
+});
       setOrders((prev) =>
         prev.map((order) => {
           if (order.id === orderId) {
-            return {
-              ...order,
-              status,
-            };
+           return {
+  ...order,
+
+  status,
+
+  ...(status === "delivered" && {
+    paymentStatus: "paid",
+  }),
+};
           }
 
           return order;

@@ -26,15 +26,26 @@ const buildImageUrl = (
   transforms: string,
   fallback: string
 ) => {
-  if (!url || typeof url !== "string" || url.trim() === "") return fallback;
-  const separator = url.includes("?") ? "&" : "?";
-  if (url.startsWith("http") || url.startsWith("/")) {
-    return `${url}${separator}${transforms}`;
+  if (!url || typeof url !== "string") return fallback;
+
+  // Local image
+  if (url.startsWith("/")) return url;
+
+  // ImageKit URL
+  if (url.includes("ik.imagekit.io")) {
+    const parts = url.split("/");
+
+    // https://ik.imagekit.io/xxxx
+    const base = parts.slice(0, 4).join("/");
+
+    // remaining path
+    const path = parts.slice(4).join("/");
+
+    return `${base}/tr:${transforms}/${path}`;
   }
-  if (!url.startsWith("http") && !url.startsWith("/")) {
-    return `https://${url}${separator}${transforms}`;
-  }
-  return fallback;
+
+  // Normal external image
+  return url;
 };
 
 /* ─── tiny helper ─── */
@@ -571,10 +582,10 @@ export default function SellerShopPage() {
                   <Image
                     loading="lazy"
                     src={buildImageUrl(
-                      product.images?.[0],
-                      "w-500,h-500,q-60,f-webp",
-                      "/fallback.png"
-                    )}
+  product.images?.[0]?.url || product.images?.[0],
+  "w-500,h-500,q-60,f-webp",
+  "/fallback.png"
+)}
                     alt={product.name || "Product"}
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -622,7 +633,7 @@ export default function SellerShopPage() {
                       <div className="flex items-center gap-2 bg-green-100 px-2 py-1.5 rounded-xl">
                         <button
                           onClick={() => removeItem(product.id)}
-                          className="w-7 h-7 rounded-lg hover:bg-green-200 font-bold"
+                          className="w-full  md:w-7 md:h-7 rounded-lg hover:bg-green-200 font-bold"
                         >
                           −
                         </button>
@@ -631,7 +642,7 @@ export default function SellerShopPage() {
                         </span>
                         <button
                           onClick={() => addItem(product.id)}
-                          className="w-7 h-7 rounded-lg hover:bg-green-200 font-bold"
+                          className="w-full  md:w-7 md:h-7 rounded-lg hover:bg-green-200 font-bold"
                         >
                           +
                         </button>
@@ -726,10 +737,10 @@ export default function SellerShopPage() {
                     <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
                       <Image
                         src={buildImageUrl(
-                          item.images?.[0],
-                          "w-300,h-300,q-60,f-webp",
-                          "/fallback.png"
-                        )}
+  item.images?.[0]?.url || item.images?.[0],
+  "w-300,h-300,q-60,f-webp",
+  "/fallback.png"
+)}
                         alt={item.name || "Product"}
                         fill
                         className="object-cover"

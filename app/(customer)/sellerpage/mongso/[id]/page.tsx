@@ -636,21 +636,9 @@ const CATEGORIES: string[] = useMemo(() => {
           alt="shop banner"
           fill
           sizes="100vw"
-          className="object-cover scale-105 brightness-[0.38]"
+          className="object-cover "
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-          <div className="mb-6">
-            <div className="w-20 h-[1px] bg-red-600 mx-auto mb-5" />
-            <h1 className="text-5xl md:text-7xl font-light tracking-[14px] uppercase text-white">
-              MONGSO
-            </h1>
-            <div className="w-20 h-[1px] bg-red-600 mx-auto mt-5" />
-          </div>
-          <p className="text-zinc-300 text-sm tracking-[6px] uppercase font-light">
-            Premium Smoked & Pickled Meat
-          </p>
-        </div>
+       
       </div>
 
       {/* SHOP INFO */}

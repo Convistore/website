@@ -2,7 +2,7 @@
 
 "use client";
 
-import AdminSidebar from "../components/admin//AdminSidebar";
+import AdminSidebar from "../components/admin/AdminSidebar";
 
 export default function AdminLayout({
   children,
@@ -10,12 +10,12 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#F5F7FB]">
-      {/* SIDEBAR */}
+    <div className="min-h-screen bg-[#F5F7FB]">
+      {/* TOP NAVBAR / SIDEBAR */}
       <AdminSidebar />
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-x-hidden">
+      {/* PAGE CONTENT */}
+      <main className="w-full overflow-x-hidden">
         {children}
       </main>
     </div>

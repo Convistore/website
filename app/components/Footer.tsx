@@ -32,12 +32,15 @@ export default function Footer() {
   {/* LOGO */}
   <div className="relative w-20 h-10 sm:w-20 sm:h-10 md:w-24 md:h-10 lg:w-28 lg:h-10 flex-shrink-0">
     <Image
-      src="/conviomart.png"
-      alt="Convi Logo"
-      fill
-      className="object-contain"
-      priority
-    />
+  src="/conviomart.png"
+  alt="Convi Logo"
+  fill
+  sizes="(max-width: 640px) 80px,
+         (max-width: 768px) 96px,
+         112px"
+  className="object-contain"
+  priority
+/>
   </div>
 
   {/* TEXT */}

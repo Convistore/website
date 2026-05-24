@@ -265,15 +265,19 @@ export default function Navbar() {
   className="flex items-center"
 >
   {/* LOGO */}
-  <div className="relative w-40 h-40   sm:w-40 sm:h-440 md:w-44 md:h-4 lg:w-50 lg:h-50  transition-all duration-300 group-hover:scale-105">
-    <Image
-      src="/conviomart.png"
-      alt="Convi Logo"
-      fill
-      className="object-contain"
-      priority
-    />
-  </div>
+  <div className="relative w-32 h-14 sm:w-36 sm:h-16 md:w-40 md:h-16 lg:w-44 lg:h-20 transition-all duration-300 group-hover:scale-105">
+  <Image
+    src="/conviomart.png"
+    alt="Convi Logo"
+    fill
+    sizes="(max-width: 640px) 128px,
+           (max-width: 768px) 144px,
+           (max-width: 1024px) 160px,
+           176px"
+    priority
+    className="object-contain"
+  />
+</div>
 </Link>
 
           {/* DESKTOP NAV */}
