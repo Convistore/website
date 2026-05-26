@@ -12,7 +12,6 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  limit,
 } from "firebase/firestore";
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -20,6 +19,10 @@ import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
 import imageCompression from "browser-image-compression";
+
+const ITEMS_PER_PAGE = 7;
+
+const CACHE_KEY = "seller_products_cache_v2";
 
 const categories = [
   "All",
@@ -56,50 +59,66 @@ const categories = [
   "Others",
 ];
 
-const ITEMS_PER_PAGE = 7;
-
 export default function MyProductsPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
 
-  const [products, setProducts] = useState<any[]>([]);
+  // ALL PRODUCTS
+  const [allProducts, setAllProducts] = useState<any[]>([]);
 
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  // PAGINATION
+  const [visibleCount, setVisibleCount] =
+    useState(ITEMS_PER_PAGE);
+
+  // MODALS
+  const [selectedProduct, setSelectedProduct] =
+    useState<any>(null);
 
   const [saving, setSaving] = useState(false);
 
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] =
+    useState(false);
 
-  const [productToDelete, setProductToDelete] = useState<any>(null);
+  const [productToDelete, setProductToDelete] =
+    useState<any>(null);
 
-  // SEARCH + FILTER
+  // FILTERS
   const [search, setSearch] = useState("");
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] =
+    useState("All");
 
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] =
+    useState("All");
 
-  // PAGINATION
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // =========================
-  // FETCH PRODUCTS
-  // =========================
-
+  // =========================================
+  // FETCH PRODUCTS ONCE
+  // =========================================
   const fetchProducts = async (uid: string) => {
     try {
-      // CACHE FIRST
-      const cached = localStorage.getItem("seller_products");
+      setLoading(true);
+
+      // LOAD CACHE FIRST
+      const cached =
+        localStorage.getItem(CACHE_KEY);
 
       if (cached) {
-        setProducts(JSON.parse(cached));
+        try {
+          const parsed = JSON.parse(cached);
+
+          if (Array.isArray(parsed)) {
+            setAllProducts(parsed);
+          }
+        } catch (err) {
+          console.error(err);
+        }
       }
 
+      // FETCH ALL PRODUCTS
       const q = query(
         collection(db, "products"),
-        where("sellerId", "==", uid),
-        limit(10),
+        where("sellerId", "==", uid)
       );
 
       const querySnapshot = await getDocs(q);
@@ -113,9 +132,20 @@ export default function MyProductsPage() {
         });
       });
 
-      setProducts(data);
+      // SORT CLIENT SIDE
+      data.sort((a, b) =>
+        (a.name || "").localeCompare(
+          b.name || ""
+        )
+      );
 
-      localStorage.setItem("seller_products", JSON.stringify(data));
+      setAllProducts(data);
+
+      // CACHE
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify(data)
+      );
     } catch (error) {
       console.error(error);
     } finally {
@@ -123,74 +153,157 @@ export default function MyProductsPage() {
     }
   };
 
-  // =========================
+  // =========================================
   // AUTH
-  // =========================
-
+  // =========================================
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        router.push("/login");
-      } else {
-        fetchProducts(user.uid);
-      }
-    });
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        async (user) => {
+          if (!user) {
+            router.push("/login");
+          } else {
+            await fetchProducts(user.uid);
+          }
+        }
+      );
 
     return () => unsubscribe();
   }, [router]);
 
-  // =========================
-  // FILTERED PRODUCTS
-  // =========================
-
+  // =========================================
+  // FILTER + SEARCH
+  // =========================================
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch =
-        product.name?.toLowerCase().includes(search.toLowerCase()) ||
-        product.category?.toLowerCase().includes(search.toLowerCase());
+    let data = [...allProducts];
 
-      const matchesCategory =
-        selectedCategory === "All" || product.category === selectedCategory;
+    // SEARCH
+    if (search.trim()) {
+      const term = search.toLowerCase();
 
-      const matchesStatus =
-        statusFilter === "All"
-          ? true
-          : statusFilter === "Available"
-            ? product.status?.isAvailable
-            : !product.status?.isAvailable;
+      data = data.filter((product) => {
+        return (
+          product.name
+            ?.toLowerCase()
+            .includes(term) ||
+          product.description
+            ?.toLowerCase()
+            .includes(term) ||
+          product.category
+            ?.toLowerCase()
+            .includes(term) ||
+          product.unit
+            ?.toLowerCase()
+            .includes(term)
+        );
+      });
+    }
 
-      return matchesSearch && matchesCategory && matchesStatus;
-    });
-  }, [products, search, selectedCategory, statusFilter]);
+    // CATEGORY
+    if (selectedCategory !== "All") {
+      data = data.filter(
+        (product) =>
+          product.category ===
+          selectedCategory
+      );
+    }
 
-  // =========================
+    // STATUS
+    if (statusFilter !== "All") {
+      data = data.filter((product) =>
+        statusFilter === "Available"
+          ? product.status?.isAvailable
+          : !product.status?.isAvailable
+      );
+    }
+
+    return data;
+  }, [
+    allProducts,
+    search,
+    selectedCategory,
+    statusFilter,
+  ]);
+
+  // =========================================
   // PAGINATION
-  // =========================
+  // =========================================
+  const paginatedProducts = useMemo(() => {
+    return filteredProducts.slice(
+      0,
+      visibleCount
+    );
+  }, [filteredProducts, visibleCount]);
 
-  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const hasMore =
+    visibleCount < filteredProducts.length;
 
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  // RESET PAGINATION ON FILTER CHANGE
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [
+    search,
+    selectedCategory,
+    statusFilter,
+  ]);
 
-  // =========================
+  // =========================================
+  // DELETE IMAGEKIT IMAGE
+  // =========================================
+  const deleteImageFromImageKit =
+    async (fileId: string) => {
+      try {
+        if (!fileId) return false;
+
+        const response = await fetch(
+          "/api/delete-imagekit-image",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              fileId,
+            }),
+          }
+        );
+
+        return response.ok;
+      } catch (error) {
+        console.error(error);
+        return false;
+      }
+    };
+
+  // =========================================
   // DELETE PRODUCT
-  // =========================
-
+  // =========================================
   const handleDelete = async () => {
     try {
       if (!productToDelete) return;
 
-      await deleteDoc(doc(db, "products", productToDelete.id));
-
-      const updatedProducts = products.filter(
-        (item) => item.id !== productToDelete.id,
+      await deleteDoc(
+        doc(
+          db,
+          "products",
+          productToDelete.id
+        )
       );
 
-      setProducts(updatedProducts);
+      const updatedProducts =
+        allProducts.filter(
+          (item) =>
+            item.id !== productToDelete.id
+        );
 
-      localStorage.setItem("seller_products", JSON.stringify(updatedProducts));
+      setAllProducts(updatedProducts);
+
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify(updatedProducts)
+      );
 
       setShowDeleteModal(false);
 
@@ -199,101 +312,81 @@ export default function MyProductsPage() {
       alert("✅ Product deleted");
     } catch (error) {
       console.error(error);
-
       alert("❌ Failed to delete");
     }
   };
 
-  // =========================
-// DELETE IMAGEKIT IMAGE
-// =========================
-
-const deleteImageFromImageKit = async (
-  fileId: string,
-) => {
-  try {
-    if (!fileId) return false;
-
-    const response = await fetch(
-      "/api/delete-imagekit-image",
-      {
-        method: "POST",
-
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-
-        body: JSON.stringify({
-          fileId,
-        }),
-      },
-    );
-
-    return response.ok;
-  } catch (error) {
-    console.error(error);
-
-    return false;
-  }
-};
-  // =========================
+  // =========================================
   // UPDATE PRODUCT
-  // =========================
-
+  // =========================================
   const handleUpdate = async () => {
     try {
       if (!selectedProduct) return;
 
       setSaving(true);
 
-      await updateDoc(doc(db, "products", selectedProduct.id), {
-        name: selectedProduct.name,
+      await updateDoc(
+        doc(
+          db,
+          "products",
+          selectedProduct.id
+        ),
+        {
+          name: selectedProduct.name,
+          description:
+            selectedProduct.description,
+          category:
+            selectedProduct.category,
+          price: Number(
+            selectedProduct.price
+          ),
+          stock: Number(
+            selectedProduct.stock
+          ),
+          unit: selectedProduct.unit,
+          images: selectedProduct.images,
 
-        description: selectedProduct.description,
-
-        category: selectedProduct.category,
-
-        price: Number(selectedProduct.price),
-
-        stock: Number(selectedProduct.stock),
-
-        unit: selectedProduct.unit,
-
-        images: selectedProduct.images,
-
-    
-
-        status: {
-          isAvailable: Number(selectedProduct.stock) > 0,
-        },
-      });
-
-      const updatedProducts = products.map((item) =>
-        item.id === selectedProduct.id ? selectedProduct : item,
+          status: {
+            isAvailable:
+              Number(
+                selectedProduct.stock
+              ) > 0,
+          },
+        }
       );
 
-      setProducts(updatedProducts);
+      const updatedProducts =
+        allProducts.map((item) =>
+          item.id === selectedProduct.id
+            ? selectedProduct
+            : item
+        );
 
-      localStorage.setItem("seller_products", JSON.stringify(updatedProducts));
+      setAllProducts(updatedProducts);
+
+      localStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify(updatedProducts)
+      );
 
       alert("✅ Product updated");
 
       setSelectedProduct(null);
     } catch (error) {
       console.error(error);
-
       alert("❌ Failed to update");
     } finally {
       setSaving(false);
     }
   };
 
-  // =========================
+  // =========================================
   // LOADING
-  // =========================
-
-  if (loading) {
+  // =========================================
+  if (
+    loading &&
+    allProducts.length === 0
+  ) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
@@ -302,186 +395,300 @@ const deleteImageFromImageKit = async (
   }
 
   return (
-   <div className="min-h-screen bg-[#F8FAFC] px-3 py-4 sm:p-5 overflow-x-hidden">
-      {/* HEADER */}
-    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-       <h1 className="text-2xl sm:text-3xl font-bold">My Products</h1>
+    <div className="min-h-screen bg-[#F8FAFC] px-3 py-4 sm:p-5 overflow-x-hidden">
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
+      {/* HEADER */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+
+        <h1 className="text-2xl sm:text-3xl font-bold">
+          My Products
+        </h1>
+
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
+
           {/* SEARCH */}
           <input
             type="text"
             placeholder="Search products..."
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-           className="border rounded-xl px-4 py-2.5 bg-white w-full sm:w-auto text-sm sm:text-base"
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
+            className="border rounded-xl px-4 py-2.5 bg-white w-full sm:w-64 text-sm sm:text-base"
           />
 
-          {/* CATEGORY FILTER */}
+          {/* CATEGORY */}
           <select
             value={selectedCategory}
-            onChange={(e) => {
-              setSelectedCategory(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border rounded-xl px-4 py-2 bg-white"
+            onChange={(e) =>
+              setSelectedCategory(
+                e.target.value
+              )
+            }
+            className="border rounded-xl px-4 py-2 bg-white text-sm sm:text-base"
           >
             {categories.map((cat) => (
-              <option key={cat}>{cat}</option>
+              <option key={cat}>
+                {cat}
+              </option>
             ))}
           </select>
 
-          {/* STATUS FILTER */}
+          {/* STATUS */}
           <select
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="border rounded-xl px-4 py-2 bg-white"
+            onChange={(e) =>
+              setStatusFilter(
+                e.target.value
+              )
+            }
+            className="border rounded-xl px-4 py-2 bg-white text-sm sm:text-base"
           >
             <option>All</option>
             <option>Available</option>
-            <option>Out Of Stock</option>
+            <option>
+              Out Of Stock
+            </option>
           </select>
+
+          {/* CLEAR FILTERS */}
+          {(search ||
+            selectedCategory !== "All" ||
+            statusFilter !==
+              "All") && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setSelectedCategory(
+                  "All"
+                );
+                setStatusFilter("All");
+              }}
+              className="text-sm text-red-500 hover:text-red-700 px-3 py-2 rounded-xl border border-red-200 bg-red-50 whitespace-nowrap"
+            >
+              Clear Filters
+            </button>
+          )}
         </div>
       </div>
 
+      {/* TOTAL */}
+      <div className="mb-4 text-sm text-gray-500">
+        Total Products:{" "}
+        {filteredProducts.length}
+      </div>
+
       {/* TABLE */}
-<div className="overflow-x-auto bg-white rounded-2xl shadow border">
-      <table className="w-full min-w-[850px] lg:min-w-[1000px] text-sm">
+      <div className="overflow-x-auto bg-white rounded-2xl shadow border">
+
+        <table className="w-full min-w-[850px] lg:min-w-[1000px] text-sm">
+
           <thead className="bg-gray-100 text-left">
+
             <tr>
-              <th className="p-4">Image</th>
-              <th className="p-4">Name</th>
-              <th className="p-4">Category</th>
-              <th className="p-4">Price</th>
-              <th className="p-4">Stock</th>
-              <th className="p-4">Unit</th>
-              <th className="p-4">Delivery</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Actions</th>
+              <th className="p-4">
+                Image
+              </th>
+              <th className="p-4">
+                Name
+              </th>
+              <th className="p-4">
+                Category
+              </th>
+              <th className="p-4">
+                Price
+              </th>
+              <th className="p-4">
+                Stock
+              </th>
+              <th className="p-4">
+                Unit
+              </th>
+              <th className="p-4">
+                Delivery
+              </th>
+              <th className="p-4">
+                Status
+              </th>
+              <th className="p-4">
+                Actions
+              </th>
             </tr>
+
           </thead>
 
           <tbody>
-            {paginatedProducts.map((product) => (
-              <tr key={product.id} className="border-t">
-                <td className="p-3 sm:p-4 whitespace-nowrap">
-                  <img
-                    loading="lazy"
-                   src={`${
-  typeof product?.images?.[0] === "string"
-    ? product?.images?.[0]
-    : product?.images?.[0]?.url
-}?tr=w-300,h-300,q-60,f-webp`}
-                    alt="product"
-                   className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border shrink-0"
-                  />
-                </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">{product.name}</td>
+            {paginatedProducts.map(
+              (product) => (
+                <tr
+                  key={product.id}
+                  className="border-t"
+                >
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">{product.category}</td>
+                    <img
+                      loading="lazy"
+                      src={`${
+                        typeof product
+                          ?.images?.[0] ===
+                        "string"
+                          ? product
+                              ?.images?.[0]
+                          : product
+                              ?.images?.[0]
+                              ?.url
+                      }?tr=w-300,h-300,q-60,f-webp`}
+                      alt="product"
+                      className="w-14 h-14 sm:w-16 sm:h-16 object-cover rounded-xl border shrink-0"
+                    />
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">₹{product.price}</td>
+                  </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">{product.stock}</td>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.name}
+                  </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">{product.unit}</td>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.category}
+                  </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">
-                  {product.delivery?.type === "free"
-                    ? "Free"
-                    : `₹${product.delivery?.charge}`}
-                </td>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    ₹{product.price}
+                  </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">
-                  {product.status?.isAvailable ? "Available" : "Out of Stock"}
-                </td>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.stock}
+                  </td>
 
-                <td className="p-3 sm:p-4 whitespace-nowrap">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-            className="bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
-                    >
-                      Edit
-                    </button>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.unit}
+                  </td>
 
-                    <button
-                      onClick={() => {
-                        setShowDeleteModal(true);
-                        setProductToDelete(product);
-                      }}
-                     className="bg-red-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.delivery
+                      ?.type === "free"
+                      ? "Free"
+                      : `₹${product.delivery?.charge}`}
+                  </td>
 
-            {paginatedProducts.length === 0 && (
-              <tr>
-                <td colSpan={9} className="text-center p-10 text-gray-500">
-                  No products found
-                </td>
-              </tr>
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+                    {product.status
+                      ?.isAvailable
+                      ? "Available"
+                      : "Out of Stock"}
+                  </td>
+
+                  <td className="p-3 sm:p-4 whitespace-nowrap">
+
+                    <div className="flex gap-2">
+
+                      <button
+                        onClick={() =>
+                          setSelectedProduct(
+                            product
+                          )
+                        }
+                        className="bg-blue-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowDeleteModal(
+                            true
+                          );
+
+                          setProductToDelete(
+                            product
+                          );
+                        }}
+                        className="bg-red-500 text-white px-3 py-2 text-xs sm:text-sm rounded-lg whitespace-nowrap"
+                      >
+                        Delete
+                      </button>
+
+                    </div>
+
+                  </td>
+                </tr>
+              )
             )}
+
+            {paginatedProducts.length ===
+              0 &&
+              !loading && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="text-center p-10 text-gray-500"
+                  >
+                    No products found
+                  </td>
+                </tr>
+              )}
           </tbody>
         </table>
       </div>
 
-      {/* PAGINATION */}
-     <div className="flex flex-wrap items-center justify-center gap-3 mt-6 text-sm sm:text-base">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((prev) => prev - 1)}
-className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:text-base"
-        >
-          Back
-        </button>
-
-        <div className="font-medium">
-          Page {currentPage} of {totalPages || 1}
-        </div>
+      {/* LOAD MORE */}
+      <div className="flex justify-center mt-6">
 
         <button
-          disabled={currentPage === totalPages || totalPages === 0}
-          onClick={() => setCurrentPage((prev) => prev + 1)}
-className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:text-base"
+          disabled={!hasMore}
+          onClick={() =>
+            setVisibleCount(
+              (prev) =>
+                prev +
+                ITEMS_PER_PAGE
+            )
+          }
+          className="px-5 py-2 rounded-xl border bg-white disabled:opacity-50"
         >
-          Next
+          {hasMore
+            ? "Load More"
+            : "No More Products"}
         </button>
+
       </div>
 
       {/* EDIT MODAL */}
       {selectedProduct && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-<div className="bg-white w-full max-w-2xl rounded-2xl p-4 sm:p-5 max-h-[90vh] overflow-y-auto">
+
+          <div className="bg-white w-full max-w-2xl rounded-2xl p-4 sm:p-5 max-h-[90vh] overflow-y-auto">
+
             <div className="flex items-center justify-between mb-5">
-             <h2 className="text-xl sm:text-2xl font-bold">Edit Product</h2>
+
+              <h2 className="text-xl sm:text-2xl font-bold">
+                Edit Product
+              </h2>
 
               <button
-                onClick={() => setSelectedProduct(null)}
+                onClick={() =>
+                  setSelectedProduct(
+                    null
+                  )
+                }
                 className="text-xl"
               >
                 ✕
               </button>
+
             </div>
 
             <div className="space-y-4">
+
               <input
-                value={selectedProduct.name}
+                value={
+                  selectedProduct.name
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    name: e.target.value,
+                    name:
+                      e.target.value,
                   })
                 }
                 placeholder="Product Name"
@@ -489,11 +696,14 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
               />
 
               <textarea
-                value={selectedProduct.description}
+                value={
+                  selectedProduct.description
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    description: e.target.value,
+                    description:
+                      e.target.value,
                   })
                 }
                 placeholder="Description"
@@ -501,19 +711,28 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
               />
 
               <select
-                value={selectedProduct.category}
+                value={
+                  selectedProduct.category
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    category: e.target.value,
+                    category:
+                      e.target.value,
                   })
                 }
                 className="w-full border rounded-xl px-3 py-2"
               >
                 {categories
-                  .filter((cat) => cat !== "All")
+                  .filter(
+                    (cat) =>
+                      cat !== "All"
+                  )
                   .map((cat) => (
-                    <option key={cat} value={cat}>
+                    <option
+                      key={cat}
+                      value={cat}
+                    >
                       {cat}
                     </option>
                   ))}
@@ -521,11 +740,14 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
 
               <input
                 type="number"
-                value={selectedProduct.price}
+                value={
+                  selectedProduct.price
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    price: e.target.value,
+                    price:
+                      e.target.value,
                   })
                 }
                 placeholder="Price"
@@ -534,11 +756,14 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
 
               <input
                 type="number"
-                value={selectedProduct.stock}
+                value={
+                  selectedProduct.stock
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    stock: e.target.value,
+                    stock:
+                      e.target.value,
                   })
                 }
                 placeholder="Stock"
@@ -546,85 +771,26 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
               />
 
               <input
-                value={selectedProduct.unit}
+                value={
+                  selectedProduct.unit
+                }
                 onChange={(e) =>
                   setSelectedProduct({
                     ...selectedProduct,
-                    unit: e.target.value,
+                    unit:
+                      e.target.value,
                   })
                 }
                 placeholder="Unit"
                 className="w-full border rounded-xl px-3 py-2"
               />
 
-              {/* DELIVERY */}
-              {/* <div className="border rounded-xl p-4 space-y-3">
-                <p className="font-semibold">Delivery</p>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedProduct({
-                        ...selectedProduct,
-                        delivery: {
-                          type: "free",
-                          charge: 0,
-                        },
-                      })
-                    }
-                    className={`flex-1 py-2 rounded-lg border ${
-                      selectedProduct.delivery?.type === "free"
-                        ? "bg-black text-white"
-                        : ""
-                    }`}
-                  >
-                    Free Delivery
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setSelectedProduct({
-                        ...selectedProduct,
-                        delivery: {
-                          type: "paid",
-                          charge: selectedProduct.delivery?.charge || 0,
-                        },
-                      })
-                    }
-                    className={`flex-1 py-2 rounded-lg border ${
-                      selectedProduct.delivery?.type === "paid"
-                        ? "bg-black text-white"
-                        : ""
-                    }`}
-                  >
-                    Paid Delivery
-                  </button>
-                </div>
-
-                {selectedProduct.delivery?.type === "paid" && (
-                  <input
-                    type="number"
-                    value={selectedProduct.delivery?.charge}
-                    onChange={(e) =>
-                      setSelectedProduct({
-                        ...selectedProduct,
-                        delivery: {
-                          type: "paid",
-                          charge: Number(e.target.value),
-                        },
-                      })
-                    }
-                    placeholder="Delivery Charge"
-                    className="w-full border rounded-xl px-3 py-2"
-                  />
-                )}
-              </div> */}
-
-              {/* IMAGES */}
+              {/* IMAGE UPLOAD */}
               <div>
-                <p className="font-semibold mb-3">Product Images</p>
+
+                <p className="font-semibold mb-3">
+                  Product Images
+                </p>
 
                 <input
                   type="file"
@@ -632,159 +798,222 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
                   accept="image/*"
                   onChange={async (e) => {
                     try {
-                      const files = e.target.files;
+                      const files =
+                        e.target.files;
 
                       if (!files) return;
 
-                      const uploadedUrls: {
-  url: string;
-  fileId: string;
-}[] = [];
+                      const uploadedUrls:
+                        {
+                          url: string;
+                          fileId: string;
+                        }[] = [];
 
-                      for (const file of Array.from(files)) {
-                        const compressedFile = await imageCompression(file, {
-                          maxSizeMB: 0.3,
-                          maxWidthOrHeight: 1280,
-                          useWebWorker: true,
-                        });
+                      for (const file of Array.from(
+                        files
+                      )) {
+                        const compressedFile =
+                          await imageCompression(
+                            file,
+                            {
+                              maxSizeMB:
+                                0.3,
+                              maxWidthOrHeight:
+                                1280,
+                              useWebWorker:
+                                true,
+                            }
+                          );
 
-                        const authRes = await fetch("/api/imagekit-auth");
+                        const authRes =
+                          await fetch(
+                            "/api/imagekit-auth"
+                          );
 
-                        const authData = await authRes.json();
+                        const authData =
+                          await authRes.json();
 
-                        const formData = new FormData();
+                        const formData =
+                          new FormData();
 
-                        formData.append("file", compressedFile);
+                        formData.append(
+                          "file",
+                          compressedFile
+                        );
 
                         formData.append(
                           "fileName",
-                          `${Date.now()}-${compressedFile.name}`,
+                          `${Date.now()}-${compressedFile.name}`
                         );
 
-                        formData.append("folder", "/products");
+                        formData.append(
+                          "folder",
+                          "/products"
+                        );
 
                         formData.append(
                           "publicKey",
-                          process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "",
+                          process.env
+                            .NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY ||
+                            ""
                         );
 
-                        formData.append("signature", authData.signature);
-
-                        formData.append("expire", authData.expire);
-
-                        formData.append("token", authData.token);
-
-                        const uploadRes = await fetch(
-                          "https://upload.imagekit.io/api/v1/files/upload",
-                          {
-                            method: "POST",
-                            body: formData,
-                          },
+                        formData.append(
+                          "signature",
+                          authData.signature
                         );
 
-                        const data = await uploadRes.json();
+                        formData.append(
+                          "expire",
+                          authData.expire
+                        );
+
+                        formData.append(
+                          "token",
+                          authData.token
+                        );
+
+                        const uploadRes =
+                          await fetch(
+                            "https://upload.imagekit.io/api/v1/files/upload",
+                            {
+                              method:
+                                "POST",
+                              body:
+                                formData,
+                            }
+                          );
+
+                        const data =
+                          await uploadRes.json();
 
                         if (data.url) {
-                         uploadedUrls.push({
-  url: data.url,
-  fileId: data.fileId,
-});
+                          uploadedUrls.push(
+                            {
+                              url:
+                                data.url,
+                              fileId:
+                                data.fileId,
+                            }
+                          );
                         }
                       }
 
                       setSelectedProduct({
                         ...selectedProduct,
-                        images: [...selectedProduct.images, ...uploadedUrls],
+                        images: [
+                          ...selectedProduct.images,
+                          ...uploadedUrls,
+                        ],
                       });
                     } catch (error) {
-                      console.error(error);
+                      console.error(
+                        error
+                      );
 
-                      alert("Failed to upload images");
+                      alert(
+                        "Failed to upload images"
+                      );
                     }
                   }}
                   className="mb-4"
                 />
 
                 <div className="grid grid-cols-2 gap-3">
+
                   {selectedProduct?.images?.map(
-                   (image: any, index: number) => (
-                      <div key={index} className="relative">
+                    (
+                      image: any,
+                      index: number
+                    ) => (
+                      <div
+                        key={index}
+                        className="relative"
+                      >
                         <img
                           loading="lazy"
                           src={`${
-  typeof image === "string"
-    ? image
-    : image?.url
-}?tr=w-500,h-500,q-70,f-webp`}
+                            typeof image ===
+                            "string"
+                              ? image
+                              : image?.url
+                          }?tr=w-500,h-500,q-70,f-webp`}
                           alt="product"
                           className="w-full h-24 sm:h-32 object-cover rounded-xl border"
                         />
 
                         <button
-  type="button"
-  onClick={async () => {
-    try {
-      const imageToDelete =
-        selectedProduct.images[index];
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const imageToDelete =
+                                selectedProduct
+                                  .images[
+                                  index
+                                ];
 
-      // =========================
-      // DELETE FROM IMAGEKIT
-      // =========================
+                              if (
+                                typeof imageToDelete !==
+                                  "string" &&
+                                imageToDelete?.fileId
+                              ) {
+                                const deleted =
+                                  await deleteImageFromImageKit(
+                                    imageToDelete.fileId
+                                  );
 
-      if (
-        typeof imageToDelete !==
-          "string" &&
-        imageToDelete?.fileId
-      ) {
-        const deleted =
-          await deleteImageFromImageKit(
-            imageToDelete.fileId,
-          );
+                                if (
+                                  !deleted
+                                ) {
+                                  alert(
+                                    "Failed to delete image"
+                                  );
 
-        if (!deleted) {
-          alert(
-            "Failed to delete image",
-          );
+                                  return;
+                                }
+                              }
 
-          return;
-        }
-      }
+                              const updatedImages =
+                                selectedProduct.images.filter(
+                                  (
+                                    _: any,
+                                    i: number
+                                  ) =>
+                                    i !==
+                                    index
+                                );
 
-      // =========================
-      // REMOVE FROM STATE
-      // =========================
+                              setSelectedProduct(
+                                {
+                                  ...selectedProduct,
+                                  images:
+                                    updatedImages,
+                                }
+                              );
 
-      const updatedImages =
-        selectedProduct.images.filter(
-          (_: any, i: number) =>
-            i !== index,
-        );
+                              alert(
+                                "✅ Image removed"
+                              );
+                            } catch (error) {
+                              console.error(
+                                error
+                              );
 
-      setSelectedProduct({
-        ...selectedProduct,
-
-        images: updatedImages,
-      });
-
-      alert(
-        "✅ Image removed",
-      );
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        "❌ Failed to remove image",
-      );
-    }
-  }}
+                              alert(
+                                "❌ Failed to remove image"
+                              );
+                            }
+                          }}
                           className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 rounded-full"
                         >
                           ✕
                         </button>
                       </div>
-                    ),
+                    )
                   )}
+
                 </div>
+
               </div>
 
               <button
@@ -792,26 +1021,43 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
                 disabled={saving}
                 className="w-full bg-[#2EE6A6] py-3 rounded-xl font-semibold"
               >
-                {saving ? "Saving..." : "Save Changes"}
+                {saving
+                  ? "Saving..."
+                  : "Save Changes"}
               </button>
+
             </div>
+
           </div>
+
         </div>
       )}
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-       <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm">
-            <h2 className="text-xl font-bold mb-3">Delete Product?</h2>
 
-            <p className="text-gray-600 mb-5">This action cannot be undone.</p>
+          <div className="bg-white rounded-2xl p-5 sm:p-6 w-full max-w-sm">
+
+            <h2 className="text-xl font-bold mb-3">
+              Delete Product?
+            </h2>
+
+            <p className="text-gray-600 mb-5">
+              This action cannot be undone.
+            </p>
 
             <div className="flex gap-3">
+
               <button
                 onClick={() => {
-                  setShowDeleteModal(false);
-                  setProductToDelete(null);
+                  setShowDeleteModal(
+                    false
+                  );
+
+                  setProductToDelete(
+                    null
+                  );
                 }}
                 className="flex-1 border py-2 rounded-xl"
               >
@@ -824,8 +1070,11 @@ className="px-4 py-2 rounded-xl border bg-white disabled:opacity-50 text-sm sm:t
               >
                 Delete
               </button>
+
             </div>
+
           </div>
+
         </div>
       )}
     </div>

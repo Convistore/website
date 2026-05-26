@@ -773,20 +773,20 @@ const generateDeliverySlots = () => {
             <div className="space-y-4">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-4 border-b pb-4">
-                  <div className="relative w-14 h-14">
-                    <Image
-                      loading="lazy"
-                      src={buildImageUrl(
-                        item.images?.[0],
-                        "w-120,h-120,q-40,f-webp",
-                        "/fallback.png"
-                      )}
-                      alt={item.name || "Product"}
-                      fill
-                      sizes="56px"
-                      className="rounded-xl object-cover"
-                    />
-                  </div>
+                 <div className="relative w-14 h-14 overflow-hidden rounded-xl bg-gray-100 shrink-0">
+  <Image
+    loading="lazy"
+    src={buildImageUrl(
+      item.images?.[0]?.url || item.images?.[0],
+      "w-120,h-120,q-40,f-webp",
+      "/fallback.png"
+    )}
+    alt={item.name || "Product"}
+    fill
+    sizes="56px"
+    className="object-cover"
+  />
+</div>
                   <div className="flex-1">
                     <p className="font-medium text-sm line-clamp-1">{item.name}</p>
                     <p className="text-xs text-gray-500">₹{fmt(item.price)} × {item.qty}</p>

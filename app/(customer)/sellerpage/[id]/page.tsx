@@ -578,32 +578,34 @@ export default function SellerShopPage() {
                 className="group bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
               >
                 {/* IMAGE */}
-                <div className="relative w-full h-28 sm:h-40 md:h-44 overflow-hidden rounded-xl sm:rounded-2xl bg-gray-100">
-                  <Image
-                    loading="lazy"
-                    src={buildImageUrl(
-  product.images?.[0]?.url || product.images?.[0],
-  "w-500,h-500,q-60,f-webp",
-  "/fallback.png"
-)}
-                    alt={product.name || "Product"}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  {!isAvailable && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold bg-red-500 px-3 py-1 rounded-full">
-                        Out of Stock
-                      </span>
-                    </div>
-                  )}
-                </div>
+            <div className="relative w-full aspect-square overflow-hidden rounded-xl sm:rounded-2xl bg-gray-100">
+  <Image
+    loading="lazy"
+    src={buildImageUrl(
+      product.images?.[0]?.url || product.images?.[0],
+      "w-500,h-500,q-60,f-webp",
+      "/fallback.png"
+    )}
+    alt={product.name || "Product"}
+    fill
+    className="object-cover transition-transform duration-500 group-hover:scale-105"
+  />
+
+  {!isAvailable && (
+    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+      <span className="text-white text-xs font-bold bg-red-500 px-3 py-1 rounded-full">
+        Out of Stock
+      </span>
+    </div>
+  )}
+</div>
 
                 {/* INFO */}
                 <div className="mt-3">
-                  <h3 className="text-[13px] sm:text-base font-semibold text-gray-900 line-clamp-2 leading-snug min-h-[2.5rem]">
+                  <h3 className="text-[13px] sm:text-base font-semibold text-gray-900 line-clamp-2 leading-snug ">
                     {product.name}
                   </h3>
+           
                   <p className="text-xs text-gray-500 mt-1">{product.unit}</p>
                   <p
                     className={`text-xs font-medium mt-1 ${
@@ -617,7 +619,7 @@ export default function SellerShopPage() {
                 </div>
 
                 {/* PRICE */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-3 pt-3 border-t border-gray-100">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mt-1 border-t border-gray-100">
                   <span className="text-base sm:text-lg font-extrabold text-gray-900">
                     ₹{product.price}
                   </span>
@@ -830,12 +832,24 @@ export default function SellerShopPage() {
               </div>
 
               <button
-                onClick={() => {
-                  // Save delivery preference before navigating
-                  localStorage.setItem("delivery_preference", selectedDelivery);
-                  setShowCart(false);
-                  router.push("/checkout");
-                }}
+               onClick={() => {
+  localStorage.setItem(
+    "delivery_preference",
+    selectedDelivery
+  );
+
+  localStorage.setItem(
+    "checkout_seller_id",
+    String(sellerId)
+  );
+
+  localStorage.setItem(
+    "checkout_delivery_fee",
+    String(deliveryFee)
+  );
+
+  router.push("/checkout");
+}}
                 disabled={cartItems.length === 0}
                 className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-4 rounded-2xl font-extrabold text-sm sm:text-lg shadow-lg transition-all active:scale-[0.98]"
               >

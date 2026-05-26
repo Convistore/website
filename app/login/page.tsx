@@ -23,6 +23,8 @@ export default function LoginPage() {
 
   const [password, setPassword] = useState("");
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const login = async () => {
@@ -108,13 +110,26 @@ export default function LoginPage() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="w-full border p-2 rounded mb-4 outline-none"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {/* PASSWORD INPUT */}
+        <div className="relative mb-4">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            className="w-full border p-2 rounded outline-none pr-16"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button
+            type="button"
+            onClick={() =>
+              setShowPassword(!showPassword)
+            }
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-600"
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
 
         <button
           onClick={login}
