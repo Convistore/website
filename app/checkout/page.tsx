@@ -20,6 +20,7 @@ import {
   limit,
   serverTimestamp,
   setDoc,
+  
 } from "firebase/firestore";
 
 const PLATFORM_FEE = 0;
@@ -47,7 +48,7 @@ const fmt = (n: number) => Number(n).toLocaleString("en-IN");
 export default function CheckoutPage() {
   const router = useRouter();
   const params = useParams();
-  
+
   // 🔥 FIX: Get sellerId from params OR localStorage fallback
   const urlSellerId = params?.id as string;
   const [effectiveSellerId, setEffectiveSellerId] = useState<string>("");
@@ -74,9 +75,12 @@ export default function CheckoutPage() {
   // 🚚 DELIVERY TYPE & SLOT
   const [selectedDelivery, setSelectedDelivery] = useState<"standard" | "fast">("standard");
   const [deliverySlot, setDeliverySlot] = useState("");
-  
+
   // Track if delivery preference has been applied after seller loads
   const [deliveryPreferenceApplied, setDeliveryPreferenceApplied] = useState(false);
+
+  // Order ID generated once for success modal (avoid Date.now() mismatch on re-render)
+  const [placedOrderId, setPlacedOrderId] = useState("");
 
   // =========================
   // CUSTOMER AUTH CHECK
@@ -113,13 +117,13 @@ export default function CheckoutPage() {
           setAddress({
             name: customer.name || "",
             phone: customer.phone || "",
-           addressLine: [
-  customer.address.house,
-  customer.address.area,
-  customer.address.landmark,
-]
-  .filter(Boolean)
-  .join(", "),
+            addressLine: [
+              customer.address.house,
+              customer.address.area,
+              customer.address.landmark,
+            ]
+              .filter(Boolean)
+              .join(", "),
             city: customer.address.city || "",
           });
           if (customer.address.house || customer.address.area) {
@@ -142,7 +146,7 @@ export default function CheckoutPage() {
   // =========================
   useEffect(() => {
     const checkoutSellerId = localStorage.getItem("checkout_seller_id");
-    
+
     if (urlSellerId) {
       // URL has sellerId - use it and update localStorage
       setEffectiveSellerId(urlSellerId);
@@ -168,7 +172,7 @@ export default function CheckoutPage() {
       try {
         const cached = localStorage.getItem(`seller_${effectiveSellerId}`);
         const cacheTime = localStorage.getItem(`seller_cache_time_${effectiveSellerId}`);
-        
+
         if (cached && cacheTime) {
           const isExpired = Date.now() - Number(cacheTime) > 1000 * 60 * 5;
           if (!isExpired) {
@@ -183,9 +187,9 @@ export default function CheckoutPage() {
           where("firebaseUid", "==", effectiveSellerId),
           limit(1)
         );
-        
+
         const sellerSnap = await getDocs(sellerQuery);
-        
+
         if (!sellerSnap.empty) {
           const data = { id: sellerSnap.docs[0].id, ...sellerSnap.docs[0].data() };
           setSeller(data);
@@ -206,10 +210,10 @@ export default function CheckoutPage() {
   // =========================
   useEffect(() => {
     if (!seller || sellerLoading || deliveryPreferenceApplied) return;
-    
+
     const savedDelivery = localStorage.getItem("delivery_preference");
     const savedSellerId = localStorage.getItem("checkout_seller_id");
-    
+
     // Only apply if seller context matches
     if (savedSellerId === effectiveSellerId && (savedDelivery === "fast" || savedDelivery === "standard")) {
       // Verify the selected option is actually enabled in seller settings
@@ -222,68 +226,67 @@ export default function CheckoutPage() {
         setSelectedDelivery("standard");
       }
     }
-    
+
     // Load saved slot for standard delivery
     const savedSlot = localStorage.getItem("delivery_slot");
     if (savedSlot) setDeliverySlot(savedSlot);
-    
+
     setDeliveryPreferenceApplied(true);
   }, [seller, sellerLoading, effectiveSellerId, deliveryPreferenceApplied]);
+useEffect(() => {
+  if (!seller?.deliverySettings) return;
 
-  // =========================
-  // GENERATE DELIVERY SLOTS (Standard Only)
-  // =========================
-// =========================
-// GENERATE DELIVERY SLOTS (Standard Only)
-// =========================
-
-// =========================
-// GENERATE DELIVERY SLOTS
-// =========================
-
-const generateDeliverySlots = () => {
-  const slots: string[] = [];
-
-  const now = new Date();
-
-  const currentHour =
-    now.getHours();
-
-  const currentMinute =
-    now.getMinutes();
-
-  let startHour = 0;
-
-  // ALWAYS START FROM NEXT HOUR
-  // Example:
-  // 7:02 -> 8PM
-  // 7:45 -> 9PM
-  if (currentMinute > 40) {
-    startHour =
-      currentHour + 2;
-  } else {
-    startHour =
-      currentHour + 1;
-  }
-
-  // START FROM 9AM MINIMUM
-  if (startHour < 9) {
-    startHour = 9;
-  }
-
-  // LAST SLOT = 9PM
-  for (
-    let hour = startHour;
-    hour <= 21;
-    hour++
+  if (
+    selectedDelivery === "standard" &&
+    !seller.deliverySettings.standard?.enabled &&
+    seller.deliverySettings.fast?.enabled
   ) {
-    slots.push(
-      formatHour(hour),
-    );
+    setSelectedDelivery("fast");
   }
 
-  return slots;
-};
+  if (
+    selectedDelivery === "fast" &&
+    !seller.deliverySettings.fast?.enabled &&
+    seller.deliverySettings.standard?.enabled
+  ) {
+    setSelectedDelivery("standard");
+  }
+}, [seller]);
+  // =========================
+  // GENERATE DELIVERY SLOTS
+  // =========================
+  const generateDeliverySlots = () => {
+    const slots: string[] = [];
+
+    const now = new Date();
+
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
+    let startHour = 0;
+
+    // ALWAYS START FROM NEXT HOUR
+    // Example:
+    // 7:02 -> 8PM
+    // 7:45 -> 9PM
+    if (currentMinute > 40) {
+      startHour = currentHour + 2;
+    } else {
+      startHour = currentHour + 1;
+    }
+
+    // START FROM 9AM MINIMUM
+    if (startHour < 9) {
+      startHour = 9;
+    }
+
+    // LAST SLOT = 9PM
+    for (let hour = startHour; hour <= 21; hour++) {
+      slots.push(formatHour(hour));
+    }
+
+    return slots;
+  };
 
   const formatHour = (hour: number) => {
     const suffix = hour >= 12 ? "PM" : "AM";
@@ -386,7 +389,6 @@ const generateDeliverySlots = () => {
       );
       localStorage.setItem("address", JSON.stringify(address));
       setIsEditing(false);
-      alert("Address saved");
     } catch (error) {
       console.error(error);
       alert("Failed to save address");
@@ -416,53 +418,7 @@ const generateDeliverySlots = () => {
   };
 
   // =========================
-  // 🚚 DELIVERY FEE & OPTIONS
-  // =========================
-  const getDeliveryCharge = () => {
-    if (cartItems.length === 0 || !seller?.deliverySettings) return 0;
-    
-    const settings = seller.deliverySettings;
-    const option = settings[selectedDelivery];
-    
-    if (!option?.enabled) {
-      const fallback = settings.standard;
-      return fallback?.enabled ? Number(fallback.charge || 0) : 0;
-    }
-    return Number(option.charge || 0);
-  };
-
-  // 🔥 FIX: Recalculate deliveryFee when seller or selection changes
-  const deliveryFee = useMemo(() => getDeliveryCharge(), [seller, selectedDelivery, cartItems.length]);
-
-  const getAvailableDeliveryOptions = () => {
-    const settings = seller?.deliverySettings;
-    if (!settings) return [];
-    
-    const options: { id: string; label: string; charge: number; desc: string }[] = [];
-    
-    if (settings.standard?.enabled) {
-      options.push({
-        id: "standard",
-        label: "Standard Delivery",
-        charge: settings.standard.charge || 0,
-        desc: "1 hour delivery",
-      });
-    }
-    if (settings.fast?.enabled) {
-      options.push({
-        id: "fast",
-        label: "Fast Delivery",
-        charge: settings.fast.charge || 0,
-        desc: "few minutes delivery",
-      });
-    }
-    return options;
-  };
-
-  const deliveryOptions = getAvailableDeliveryOptions();
-
-  // =========================
-  // TOTALS
+  // TOTALS (subtotal needed before delivery calc)
   // =========================
   const subtotal = useMemo(() => {
     return cartItems.reduce((sum, item: any) => sum + item.price * item.qty, 0);
@@ -472,9 +428,95 @@ const generateDeliverySlots = () => {
     return cartItems.reduce((sum, item: any) => sum + item.qty, 0);
   }, [cartItems]);
 
+
+
+// =========================
+  // 🚚 DELIVERY FEE & OPTIONS
+  // =========================
+  const getDeliveryCharge = () => {
+    if (cartItems.length === 0 || !seller?.deliverySettings) return 0;
+
+    const settings = seller.deliverySettings;
+
+    // FAST DELIVERY — always charged at its own rate, never free
+    if (selectedDelivery === "fast") {
+      return Number(settings.fast?.charge || 0);
+    }
+
+    // STANDARD DELIVERY
+    if (settings.freeDelivery?.enabled) {
+      const minOrder = Number(settings.freeDelivery.minOrder || 0);
+      const belowCharge = Number(settings.freeDelivery.belowCharge || 0);
+
+      if (subtotal >= minOrder) {
+        return 0; // FREE above threshold
+      }
+      return belowCharge; // Below threshold custom charge
+    }
+
+    // Normal standard charge (no free delivery configured)
+    return Number(settings.standard?.charge || 0);
+  };
+
+  const deliveryFee = useMemo(
+    () => getDeliveryCharge(),
+    [seller, selectedDelivery, subtotal, cartItems.length]
+  );
+
+  const getAvailableDeliveryOptions = () => {
+    const settings = seller?.deliverySettings;
+    if (!settings) return [];
+
+    const options: { id: string; label: string; charge: number; desc: string; freeAbove?: number }[] = [];
+
+    if (settings.standard?.enabled) {
+      const freeEnabled = settings.freeDelivery?.enabled;
+      options.push({
+        id: "standard",
+        label: "Standard Delivery",
+        charge: freeEnabled
+          ? Number(settings.freeDelivery.belowCharge || 0)
+          : Number(settings.standard.charge || 0),
+        desc: freeEnabled
+          ? `FREE on orders above ₹${fmt(Number(settings.freeDelivery.minOrder || 0))}`
+          : "Delivered within 1 hour",
+        freeAbove: freeEnabled ? Number(settings.freeDelivery.minOrder || 0) : undefined,
+      });
+    }
+    if (settings.fast?.enabled) {
+      options.push({
+        id: "fast",
+        label: "Fast Delivery",
+        charge: Number(settings.fast.charge || 0),
+        desc: "Delivered in just a few minutes",
+      });
+    }
+    return options;
+  };
+
+  const deliveryOptions = getAvailableDeliveryOptions();
+
+  // Whether free delivery is configured & enabled at all (regardless of selection)
+  const freeDeliveryEnabled = !!seller?.deliverySettings?.freeDelivery?.enabled;
+  const standardEnabled = !!seller?.deliverySettings?.standard?.enabled;
+
   const total = useMemo(() => {
     return subtotal + deliveryFee + PLATFORM_FEE;
   }, [subtotal, deliveryFee]);
+
+  // Helper: amount needed to unlock free standard delivery
+  // Shown whenever standard delivery + free delivery threshold is configured,
+  // regardless of which delivery type is currently selected
+  const amountToFreeDelivery = useMemo(() => {
+    if (!standardEnabled || !freeDeliveryEnabled) return null;
+    const minOrder = Number(seller?.deliverySettings?.freeDelivery?.minOrder || 0);
+    const remaining = minOrder - subtotal;
+    return remaining > 0 ? remaining : 0;
+  }, [seller, subtotal, standardEnabled, freeDeliveryEnabled]);
+
+
+
+ 
 
   // =========================
   // PLACE ORDER
@@ -550,7 +592,40 @@ const generateDeliverySlots = () => {
       };
 
       const purchaseRef = await addDoc(collection(db, "purchases"), purchaseData);
+// Send notification to every seller
+for (const sellerId of purchaseData.sellerIds) {
+  try {
+    const sellerQuery = query(
+      collection(db, "sellers"),
+      where("firebaseUid", "==", sellerId),
+      limit(1)
+    );
 
+    const sellerSnap = await getDocs(sellerQuery);
+
+    if (sellerSnap.empty) continue;
+
+    const sellerDoc = sellerSnap.docs[0];
+    const sellerData = sellerDoc.data();
+
+    if (!sellerData.fcmToken) continue;
+
+    await fetch("/api/sendNotification", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+     body: JSON.stringify({
+  token: sellerData.fcmToken,
+  title: "🛒 New Order Received",
+  body: `Order ${orderId} has been placed.`,
+  orderId,
+}),
+    });
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+}
       await addDoc(
         collection(db, "customers", auth.currentUser.uid, "orders"),
         {
@@ -578,7 +653,8 @@ const generateDeliverySlots = () => {
       localStorage.removeItem("delivery_preference");
       localStorage.removeItem("checkout_seller_id");
       localStorage.removeItem("checkout_delivery_fee");
-      
+
+      setPlacedOrderId(orderId);
       setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
@@ -592,22 +668,39 @@ const generateDeliverySlots = () => {
   if (checkingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
-        <div className="text-lg font-semibold text-[#0F172A]">Checking account...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-[#2EE6A6] border-t-transparent rounded-full animate-spin" />
+          <div className="text-base font-medium text-[#0F172A]">Checking your account...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-28">
+    <div className="min-h-screen bg-[#F8FAFC] pb-32">
       <Navbar />
 
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <div className="max-w-3xl mx-auto px-4 py-6 space-y-5">
+        {/* PAGE HEADER */}
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#0F172A]">Checkout</h1>
+          <span className="text-sm text-gray-400">
+            ({totalItems} {totalItems === 1 ? "item" : "items"})
+          </span>
+        </div>
+
         {/* ADDRESS */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-[#0F172A]">Delivery Details</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">📍</span>
+              <h2 className="text-lg font-semibold text-[#0F172A]">Delivery Address</h2>
+            </div>
             {!isEditing && (
-              <button onClick={() => setIsEditing(true)} className="text-[#2EE6A6] text-sm font-medium">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-[#0F172A] text-sm font-semibold bg-[#2EE6A6]/15 px-3 py-1.5 rounded-lg hover:bg-[#2EE6A6]/25 transition"
+              >
                 Edit
               </button>
             )}
@@ -615,128 +708,178 @@ const generateDeliverySlots = () => {
 
           {isEditing ? (
             <div className="space-y-3">
-              <label htmlFor="name" className="block text-sm font-medium text-[#0F172A]">
-                Full Name
-              </label>
-              <input
-                placeholder="Full Name"
-                value={address.name}
-                onChange={(e) => setAddress({ ...address, name: e.target.value })}
-                className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
-              />
-              <label htmlFor="phone" className="block text-sm font-medium text-[#0F172A]">  
-                Phone Number  
-              </label>
-              <input
-                placeholder="Phone Number"
-                value={address.phone}
-                onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
-              />
-              <label htmlFor="address" className="block text-sm font-medium text-[#0F172A]">
-                Address
-              </label>
-              <input
-                placeholder="Full Address"
-                value={address.addressLine}
-                onChange={(e) => setAddress({ ...address, addressLine: e.target.value })}
-                className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
-              />
-              <label htmlFor="city" className="block text-sm font-medium text-[#0F172A]">
-                City
-              </label>
-              <input
-                placeholder="City"
-                value={address.city}
-                onChange={(e) => setAddress({ ...address, city: e.target.value })}
-                className="w-full border rounded-lg px-3 py-3 text-sm outline-none"
-              />
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-[#0F172A] mb-1">
+                  Full Name
+                </label>
+                <input
+                  id="name"
+                  placeholder="e.g. Rohan Sharma"
+                  value={address.name}
+                  onChange={(e) => setAddress({ ...address, name: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#2EE6A6] focus:ring-2 focus:ring-[#2EE6A6]/30 transition"
+                />
+              </div>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-[#0F172A] mb-1">
+                  Phone Number
+                </label>
+                <input
+                  id="phone"
+                  placeholder="10-digit mobile number"
+                  value={address.phone}
+                  onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#2EE6A6] focus:ring-2 focus:ring-[#2EE6A6]/30 transition"
+                />
+              </div>
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-[#0F172A] mb-1">
+                  Address
+                </label>
+                <input
+                  id="address"
+                  placeholder="House no., street, area, landmark"
+                  value={address.addressLine}
+                  onChange={(e) => setAddress({ ...address, addressLine: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#2EE6A6] focus:ring-2 focus:ring-[#2EE6A6]/30 transition"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-[#0F172A] mb-1">
+                  City
+                </label>
+                <input
+                  id="city"
+                  placeholder="City"
+                  value={address.city}
+                  onChange={(e) => setAddress({ ...address, city: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-[#2EE6A6] focus:ring-2 focus:ring-[#2EE6A6]/30 transition"
+                />
+              </div>
               <button
                 onClick={handleSaveAddress}
-                className="w-full bg-[#2EE6A6] text-[#0F172A] py-3 rounded-xl font-semibold"
+                disabled={!address.name || !address.phone || !address.addressLine || !address.city}
+                className="w-full bg-[#2EE6A6] text-[#0F172A] py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition"
               >
                 Save Address
               </button>
             </div>
           ) : (
-            <div className="text-sm text-[#0F172A] space-y-1">
-              <p className="font-medium">Name : {address.name}</p>
-              <p>Phone : {address.phone}</p>
-              <p>Address : {address.addressLine}</p>
-              <p>City : {address.city}</p>
+            <div className="text-sm text-[#0F172A] space-y-1.5 bg-[#F8FAFC] rounded-xl p-4">
+              <p className="font-semibold">{address.name}</p>
+              <p className="text-gray-600">{address.phone}</p>
+              <p className="text-gray-600">{address.addressLine}</p>
+              <p className="text-gray-600">{address.city}</p>
             </div>
           )}
         </div>
 
         {/* 🚚 DELIVERY TYPE SELECTION */}
-        {!sellerLoading && effectiveSellerId ? (
-          deliveryOptions.length > 0 ? (
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Delivery Method</h2>
-              <div className="space-y-3">
-                {deliveryOptions.map((option) => (
-                  <label
-                    key={option.id}
-                    className={`flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all ${
-                      selectedDelivery === option.id
-                        ? "border-[#2EE6A6] bg-[#2EE6A6]/10"
-                        : "border-gray-200 bg-white hover:border-gray-300"
+       {/* 🚚 DELIVERY TYPE SELECTION */}
+        {!sellerLoading && effectiveSellerId && deliveryOptions.length > 0 && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🚚</span>
+              <h2 className="text-lg font-semibold text-[#0F172A]">Delivery Method</h2>
+            </div>
+            <div className="space-y-3">
+              {deliveryOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                    selectedDelivery === option.id
+                      ? "border-[#2EE6A6] bg-[#2EE6A6]/10"
+                      : "border-gray-200 bg-white hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="radio"
+                      name="delivery"
+                      value={option.id}
+                      checked={selectedDelivery === option.id}
+                      onChange={(e) => {
+                        const value = e.target.value as "standard" | "fast";
+                        setSelectedDelivery(value);
+                        if (value === "fast") setDeliverySlot("");
+                      }}
+                      className="w-5 h-5 accent-[#2EE6A6]"
+                    />
+                    <div>
+                      <p className="font-semibold text-[#0F172A] flex items-center gap-2">
+                        {option.label}
+                        {option.id === "fast" && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide bg-[#0F172A] text-[#2EE6A6] px-2 py-0.5 rounded-full">
+                            ⚡ Express
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-sm text-gray-500">{option.desc}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`font-bold ${
+                      option.charge === 0 ? "text-green-600" : "text-[#0F172A]"
                     }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="radio"
-                        name="delivery"
-                        value={option.id}
-                        checked={selectedDelivery === option.id}
-                        onChange={(e) => {
-                          const value = e.target.value as "standard" | "fast";
-                          setSelectedDelivery(value);
-                          if (value === "fast") setDeliverySlot("");
-                        }}
-                        className="w-5 h-5 text-[#2EE6A6] focus:ring-[#2EE6A6]"
-                      />
-                      <div>
-                        <p className="font-medium text-[#0F172A]">{option.label}</p>
-                        <p className="text-sm text-gray-500">{option.desc}</p>
-                      </div>
-                    </div>
-                    <span className="font-semibold text-[#2EE6A6]">
-                      {option.charge === 0 ? "Free" : `₹${fmt(option.charge)}`}
-                    </span>
-                  </label>
-                ))}
+                    {option.charge === 0 ? "FREE" : `₹${fmt(option.charge)}`}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            {/* Free delivery progress nudge — shown for any selected option,
+                as long as standard + free delivery threshold is configured */}
+            {amountToFreeDelivery !== null && amountToFreeDelivery > 0 && (
+              <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+                Add <span className="font-bold">₹{fmt(amountToFreeDelivery)}</span> more to
+                your order to get{" "}
+                <span className="font-bold">FREE Standard Delivery</span> 🎉
+                <div className="w-full bg-amber-100 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-amber-400 h-2 rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        (subtotal /
+                          Number(seller?.deliverySettings?.freeDelivery?.minOrder || 1)) *
+                          100
+                      )}%`,
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
-              <p className="text-sm text-gray-500">Standard delivery available</p>
-            </div>
-          )
-        ) : (
-          <div className="bg-white rounded-2xl p-5 shadow-sm animate-pulse">
-            <div className="h-5 bg-gray-200 rounded w-32 mb-4" />
-            <div className="space-y-3">
-              <div className="h-14 bg-gray-100 rounded-xl" />
-              <div className="h-14 bg-gray-100 rounded-xl" />
-            </div>
+            )}
+            {amountToFreeDelivery === 0 && (
+              <div className="mt-4 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700 font-medium">
+                🎉 You've unlocked FREE Standard Delivery!
+              </div>
+            )}
           </div>
         )}
 
+    
+
         {/* 🕐 DELIVERY SLOT (Only for Standard) */}
-        {selectedDelivery === "standard" && !sellerLoading && effectiveSellerId && (
-          <div className="bg-white rounded-2xl p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Select Delivery Time</h2>
+{selectedDelivery === "standard" &&
+ seller?.deliverySettings?.standard?.enabled &&
+ !sellerLoading &&
+ effectiveSellerId && (
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">🕐</span>
+              <h2 className="text-lg font-semibold text-[#0F172A]">Select Delivery Time</h2>
+            </div>
             {deliverySlots.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {deliverySlots.map((slot) => (
                   <button
                     key={slot}
                     onClick={() => setDeliverySlot(slot)}
-                    className={`border rounded-xl py-3 text-sm font-medium transition ${
+                    className={`border-2 rounded-xl py-3 text-sm font-semibold transition ${
                       deliverySlot === slot
-                        ? "bg-[#2EE6A6] border-[#2EE6A6] text-black"
-                        : "bg-white hover:border-[#2EE6A6]"
+                        ? "bg-[#2EE6A6] border-[#2EE6A6] text-[#0F172A]"
+                        : "bg-white border-gray-200 hover:border-[#2EE6A6] text-[#0F172A]"
                     }`}
                   >
                     {slot}
@@ -756,45 +899,63 @@ const generateDeliverySlots = () => {
           <div className="bg-[#2EE6A6]/10 border border-[#2EE6A6]/30 rounded-2xl p-4 flex items-start gap-3">
             <span className="text-2xl">⚡</span>
             <div>
-              <p className="font-medium text-[#0F172A]">Fast Delivery Selected</p>
+              <p className="font-semibold text-[#0F172A]">Fast Delivery Selected</p>
               <p className="text-sm text-gray-600">
-                Your order will be prioritized and delivered soon. No time slot selection needed.
+                Your order will be prioritized and delivered in just a few minutes. No time slot
+                needed.
               </p>
             </div>
           </div>
         )}
 
         {/* ORDER SUMMARY */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-[#0F172A] mb-5">Order Summary</h2>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-5">
+            Order Summary
+          </h2>
           {cartItems.length === 0 ? (
-            <div className="text-center py-10 text-gray-500">Cart is empty</div>
+            <div className="text-center py-10 text-gray-500">
+              <p className="text-3xl mb-2">🛒</p>
+              <p>Your cart is empty</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-4 border-b pb-4">
-                 <div className="relative w-14 h-14 overflow-hidden rounded-xl bg-gray-100 shrink-0">
-  <Image
-    loading="lazy"
-    src={buildImageUrl(
-      item.images?.[0]?.url || item.images?.[0],
-      "w-120,h-120,q-40,f-webp",
-      "/fallback.png"
-    )}
-    alt={item.name || "Product"}
-    fill
-    sizes="56px"
-    className="object-cover"
-  />
-</div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm line-clamp-1">{item.name}</p>
+                <div key={item.id} className="flex items-center gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                  <div className="relative w-14 h-14 overflow-hidden rounded-xl bg-gray-100 shrink-0">
+                    <Image
+                      loading="lazy"
+                      src={buildImageUrl(
+                        item.images?.[0]?.url || item.images?.[0],
+                        "w-120,h-120,q-40,f-webp",
+                        "/fallback.png"
+                      )}
+                      alt={item.name || "Product"}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm line-clamp-1 text-[#0F172A]">{item.name}</p>
                     <p className="text-xs text-gray-500">₹{fmt(item.price)} × {item.qty}</p>
                   </div>
-                  <div className="flex items-center gap-3 bg-[#2EE6A6] px-3 py-1 rounded-xl">
-                    <button onClick={() => updateQty(item.id, "remove")}>−</button>
-                    <span>{item.qty}</span>
-                    <button onClick={() => updateQty(item.id, "add")}>+</button>
+                  <div className="flex items-center gap-3 bg-[#2EE6A6] px-3 py-1.5 rounded-xl font-semibold text-[#0F172A]">
+                    <button
+                      onClick={() => updateQty(item.id, "remove")}
+                      className="w-5 h-5 flex items-center justify-center hover:opacity-70"
+                      aria-label="Decrease quantity"
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[1.25rem] text-center">{item.qty}</span>
+                    <button
+                      onClick={() => updateQty(item.id, "add")}
+                      className="w-5 h-5 flex items-center justify-center hover:opacity-70"
+                      aria-label="Increase quantity"
+                    >
+                      +
+                    </button>
                   </div>
                 </div>
               ))}
@@ -803,28 +964,28 @@ const generateDeliverySlots = () => {
         </div>
 
         {/* BILL DETAILS */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <h2 className="text-lg font-semibold mb-4">Bill Details</h2>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-[#0F172A] mb-4">Bill Details</h2>
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Items Total</span>
-              <span>₹{fmt(subtotal)}</span>
+              <span className="text-[#0F172A] font-medium">₹{fmt(subtotal)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">
-                Delivery ({deliveryOptions.find(o => o.id === selectedDelivery)?.label || "Standard"})
+                Delivery ({deliveryOptions.find((o) => o.id === selectedDelivery)?.label || "Standard"})
               </span>
-              <span className={deliveryFee === 0 ? "text-green-600" : ""}>
-                {deliveryFee === 0 ? "FREE" : `₹${fmt(deliveryFee)}`}
+              <span className={deliveryFee === 0 ? "text-green-600 font-semibold" : "text-[#0F172A] font-medium"}>
+                {deliveryFee === 0 ? "FREE 🎉" : `₹${fmt(deliveryFee)}`}
               </span>
             </div>
             {PLATFORM_FEE > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Platform Fee</span>
-                <span>₹{fmt(PLATFORM_FEE)}</span>
+                <span className="text-[#0F172A] font-medium">₹{fmt(PLATFORM_FEE)}</span>
               </div>
             )}
-            <div className="border-t pt-3 flex justify-between font-bold text-lg">
+            <div className="border-t border-gray-100 pt-3 flex justify-between font-bold text-lg text-[#0F172A]">
               <span>Total</span>
               <span>₹{fmt(total)}</span>
             </div>
@@ -833,9 +994,9 @@ const generateDeliverySlots = () => {
       </div>
 
       {/* BOTTOM BAR */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t px-4 py-3 flex items-center justify-between shadow-md">
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-4 py-3 flex items-center justify-between shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         <div>
-          <p className="text-xs text-gray-500">{totalItems} items</p>
+          <p className="text-xs text-gray-500">{totalItems} {totalItems === 1 ? "item" : "items"}</p>
           <p className="text-lg font-bold text-[#0F172A]">₹{fmt(total)}</p>
         </div>
         <button
@@ -849,7 +1010,7 @@ const generateDeliverySlots = () => {
             sellerLoading ||
             !effectiveSellerId
           }
-          className="bg-[#2EE6A6] text-[#0F172A] px-6 py-3 rounded-xl font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition"
+          className="bg-[#2EE6A6] text-[#0F172A] px-8 py-3 rounded-xl font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98] transition"
         >
           {sellerLoading ? "Loading..." : "Place Order"}
         </button>
@@ -868,7 +1029,7 @@ const generateDeliverySlots = () => {
             <p className="text-gray-500 mb-6">Your order has been confirmed successfully.</p>
             <div className="bg-[#F8FAFC] rounded-xl p-4 mb-6">
               <p className="text-xs text-gray-400 uppercase tracking-wide">Order ID</p>
-              <p className="font-mono font-semibold text-[#0F172A]">order_{Date.now()}</p>
+              <p className="font-mono font-semibold text-[#0F172A]">{placedOrderId}</p>
             </div>
             <div className="space-y-3">
               <p className="text-sm text-gray-500">
@@ -884,7 +1045,7 @@ const generateDeliverySlots = () => {
             </div>
             <button
               onClick={() => router.push("/customer/orders")}
-              className="mt-6 text-sm text-[#2EE6A6] font-medium hover:underline"
+              className="mt-6 text-sm text-[#2EE6A6] font-semibold hover:underline"
             >
               Go to Orders Now →
             </button>

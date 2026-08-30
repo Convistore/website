@@ -12,9 +12,9 @@ import {
   limit,
   query,
   startAfter,
-  where,
   doc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import { onAuthStateChanged } from "firebase/auth";
@@ -296,43 +296,55 @@ if (loadMore && lastDoc) {
 
     return () => unsubscribe();
   }, [router]);
+// =========================
+// REAL-TIME SELLER UPDATES
+// =========================
 
-  // =========================
-  // CACHE SELLERS
-  // =========================
+useEffect(() => {
+  const sellersRef = collection(db, "sellers");
 
-  useEffect(() => {
-    const cached =
-      localStorage.getItem(
-        "sellers_cache"
+  const unsubscribe = onSnapshot(
+    sellersRef,
+    (snapshot) => {
+      const sellerList = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      const unique = Array.from(
+        new Map(
+          sellerList.map((seller) => [
+            seller.firebaseUid,
+            seller,
+          ])
+        ).values()
       );
 
-    const cacheTime =
-      localStorage.getItem(
-        "sellers_cache_time"
+      setSellers(unique);
+      setLoading(false);
+
+      // Update cache as well
+      localStorage.setItem(
+        "sellers_cache",
+        JSON.stringify(unique)
       );
 
-    // USE CACHE
-    if (cached && cacheTime) {
-      const isExpired =
-        Date.now() -
-          Number(cacheTime) >
-        CACHE_TIME;
-
-      if (!isExpired) {
-        setSellers(
-          JSON.parse(cached)
-        );
-
-        setLoading(false);
-
-        return;
-      }
+      localStorage.setItem(
+        "sellers_cache_time",
+        Date.now().toString()
+      );
+    },
+    (error) => {
+      console.error(
+        "Error listening to sellers:",
+        error
+      );
     }
+  );
 
-    // FETCH ONLY IF NO CACHE
-    fetchSellers();
-  }, []);
+  return () => unsubscribe();
+}, []);
+
 
   // =========================
   // FILTERS
@@ -585,14 +597,22 @@ if (loadMore && lastDoc) {
             const isLast = index === filteredSellers.length - 1;
 
             return (
-              <div
-                ref={isLast ? lastSellerRef : null}
-                key={seller.firebaseUid}
-                onClick={() => handleSellerClick(seller)}
-                className="group cursor-pointer overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100"
-              >
+           <div
+  ref={isLast ? lastSellerRef : null}
+  key={seller.firebaseUid}
+  onClick={() => {
+    if (seller.status === "Open") {
+      handleSellerClick(seller);
+    }
+  }}
+  className={`group overflow-hidden rounded-2xl sm:rounded-3xl bg-white shadow-sm border border-gray-100 transition-all duration-300 ${
+    seller.status === "Open"
+      ? "cursor-pointer hover:shadow-2xl hover:-translate-y-2"
+      : "cursor-not-allowed opacity-70"
+  }`}
+>
                 {/* IMAGE SECTION */}
-                <div className="relative h-48 sm:h-56 md:h-60 overflow-hidden">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-3xl bg-gray-100">
                   <Image
                     loading="lazy"
                     src={
@@ -603,7 +623,7 @@ if (loadMore && lastDoc) {
                     alt={seller.shopName || "Shop"}
                     fill
                     sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+ className="object-cover transition-transform duration-700 group-hover:scale-105"
                   />
 
                   {/* DARK OVERLAY */}
@@ -669,7 +689,7 @@ if (loadMore && lastDoc) {
                         {seller.sellerName}
                       </p>
                       <p className="mt-0.5 sm:mt-1 line-clamp-1 text-xs sm:text-sm text-gray-500">
-                        📍 {seller.location?.fullAddress || "Location unavailable"}
+                        📍 {seller.location?.address || "Location unavailable"}
                       </p>
                     </div>
                   </div>
@@ -694,12 +714,31 @@ if (loadMore && lastDoc) {
                       </p>
                     </div>
 
-                    <button className="flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl bg-gradient-to-r from-green-500 to-green-700 px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold text-white shadow-lg transition-all hover:scale-105 hover:shadow-green-200 active:scale-95">
-                      Visit
-                      <svg viewBox="0 0 16 16" fill="none" width="14" height="14" className="sm:w-4 sm:h-4">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
+                  <button
+  disabled={seller.status !== "Open"}
+  className={`flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-sm font-extrabold transition-all ${
+    seller.status === "Open"
+      ? "bg-gradient-to-r from-green-500 to-green-700 text-white shadow-lg hover:scale-105 hover:shadow-green-200 active:scale-95"
+      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+  }`}
+>
+  {seller.status === "Open" ? "Visit" : "Closed"}
+  <svg
+    viewBox="0 0 16 16"
+    fill="none"
+    width="14"
+    height="14"
+    className="sm:w-4 sm:h-4"
+  >
+    <path
+      d="M3 8h10M9 4l4 4-4 4"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+</button>
                   </div>
                 </div>
               </div>
@@ -752,7 +791,11 @@ if (loadMore && lastDoc) {
                 <div
                   key={seller.firebaseUid}
                   className="flex-shrink-0 w-56 sm:w-64 flex items-center gap-3 sm:gap-4 bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-100 cursor-pointer transition-all hover:shadow-md hover:-translate-y-1 active:scale-95"
-                  onClick={() => handleSellerClick(seller)}
+   onClick={() => {
+  if (seller.status === "Open") {
+    handleSellerClick(seller);
+  }
+}}
                 >
                   <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl overflow-hidden flex-shrink-0 border-2 border-white shadow">
                     <Image

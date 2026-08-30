@@ -77,7 +77,12 @@ export default function AddProductPage() {
     fast: {
       enabled: false,
       charge: "",
-    },
+    }, 
+freeDelivery: {
+  enabled: false,
+  minOrder: "",      // Free above this amount
+  belowCharge: "",   // Charge below this amount
+},
   });
   // =========================
   // FORM
@@ -124,9 +129,27 @@ export default function AddProductPage() {
           `delivery_settings_${user.uid}`,
         );
 
-        if (cachedDelivery) {
-          setDeliverySettings(JSON.parse(cachedDelivery));
-        }
+      if (cachedDelivery) {
+  const cached = JSON.parse(cachedDelivery);
+
+  setDeliverySettings({
+    standard: {
+      enabled: cached.standard?.enabled ?? true,
+      charge: cached.standard?.charge ?? "0",
+    },
+
+    fast: {
+      enabled: cached.fast?.enabled ?? false,
+      charge: cached.fast?.charge ?? "",
+    },
+
+    freeDelivery: {
+      enabled: cached.freeDelivery?.enabled ?? false,
+      minOrder: cached.freeDelivery?.minOrder ?? "",
+      belowCharge: cached.freeDelivery?.belowCharge ?? "",
+    },
+  });
+}
 
         // =========================
         // FETCH SELLER SETTINGS
@@ -154,7 +177,18 @@ export default function AddProductPage() {
                 enabled: data?.deliverySettings?.fast?.enabled ?? false,
 
                 charge: String(data?.deliverySettings?.fast?.charge ?? ""),
-              },
+              },freeDelivery: {
+  enabled:
+    data?.deliverySettings?.freeDelivery?.enabled ?? false,
+
+  minOrder: String(
+    data?.deliverySettings?.freeDelivery?.minOrder ?? "",
+  ),
+
+  belowCharge: String(
+    data?.deliverySettings?.freeDelivery?.belowCharge ?? "",
+  ),
+},
             });
 
             localStorage.setItem(
@@ -318,7 +352,17 @@ export default function AddProductPage() {
           charge: deliverySettings?.fast?.enabled
             ? Number(deliverySettings?.fast?.charge) || 0
             : 0,
-        },
+        },freeDelivery: {
+  enabled: deliverySettings.freeDelivery.enabled,
+
+  minOrder: deliverySettings.freeDelivery.enabled
+    ? Number(deliverySettings.freeDelivery.minOrder) || 0
+    : 0,
+
+  belowCharge: deliverySettings.freeDelivery.enabled
+    ? Number(deliverySettings.freeDelivery.belowCharge) || 0
+    : 0,
+},
       };
 
       // =========================
@@ -776,7 +820,89 @@ const saveShopStatus = async () => {
                 />
               )}
             </div>
+<div className="border rounded-2xl p-4">
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="font-semibold">
+      Free Delivery
+    </h3>
 
+    <button
+      type="button"
+      onClick={() =>
+        setDeliverySettings((prev) => ({
+          ...prev,
+          freeDelivery: {
+            ...prev.freeDelivery,
+            enabled: !prev.freeDelivery.enabled,
+          },
+        }))
+      }
+      className={`px-4 py-2 rounded-lg ${
+        deliverySettings.freeDelivery.enabled
+          ? "bg-green-500 text-white"
+          : "bg-gray-200"
+      }`}
+    >
+      {deliverySettings.freeDelivery.enabled
+        ? "Enabled"
+        : "Disabled"}
+    </button>
+  </div>
+
+  {deliverySettings.freeDelivery.enabled && (
+    <>
+      {/* Free Above */}
+
+      <input
+        type="number"
+        placeholder="Free Delivery Above (₹)"
+        value={deliverySettings.freeDelivery.minOrder}
+        onChange={(e) =>
+          setDeliverySettings((prev) => ({
+            ...prev,
+            freeDelivery: {
+              ...prev.freeDelivery,
+              minOrder: e.target.value,
+            },
+          }))
+        }
+        className="w-full border rounded-lg px-3 py-2 mb-3"
+      />
+
+      {/* Charge Below */}
+
+      <input
+        type="number"
+        placeholder="Delivery Charge Below That (₹)"
+        value={deliverySettings.freeDelivery.belowCharge}
+        onChange={(e) =>
+          setDeliverySettings((prev) => ({
+            ...prev,
+            freeDelivery: {
+              ...prev.freeDelivery,
+              belowCharge: e.target.value,
+            },
+          }))
+        }
+        className="w-full border rounded-lg px-3 py-2"
+      />
+
+      <p className="text-sm text-gray-500 mt-3">
+        Orders below ₹
+        {deliverySettings.freeDelivery.minOrder || 0}
+        {" "}will be charged ₹
+        {deliverySettings.freeDelivery.belowCharge || 0}
+        {" "}for delivery.
+      </p>
+
+      <p className="text-sm text-green-600">
+        Orders of ₹
+        {deliverySettings.freeDelivery.minOrder || 0}
+        {" "}or more get FREE delivery.
+      </p>
+    </>
+  )}
+</div>
             {/* SAVE */}
             <button
               type="button"

@@ -15,7 +15,15 @@ export default function SellerAccountPage() {
   const [uploadingSeller, setUploadingSeller] = useState(false);
 
   const { seller, setSeller, lastFetched } = useSellerStore();
+const [editingAddress, setEditingAddress] = useState(false);
 
+const [addressData, setAddressData] = useState({
+  address: seller?.location?.address || "",
+  landmark: seller?.location?.landmark || "",
+  city: seller?.location?.city || "",
+  state: seller?.location?.state || "",
+  pincode: seller?.location?.pincode || "",
+});
   // =========================
   // CACHE TIME
   // =========================
@@ -71,7 +79,40 @@ export default function SellerAccountPage() {
 
     return () => unsubscribe();
   }, [router, seller, lastFetched, setSeller]);
+  useEffect(() => {
+  if (seller?.location) {
+    setAddressData({
+      address: seller.location.address || "",
+      landmark: seller.location.landmark || "",
+      city: seller.location.city || "",
+      state: seller.location.state || "",
+      pincode: seller.location.pincode || "",
+    });
+  }
+}, [seller]);
+const updateAddress = async () => {
+  try {
+    const user = auth.currentUser;
 
+    if (!user) return;
+
+    await updateDoc(doc(db, "sellers", user.uid), {
+      location: addressData,
+    });
+
+    setSeller({
+      ...seller,
+      location: addressData,
+    });
+
+    setEditingAddress(false);
+
+    alert("Address updated successfully");
+  } catch (error) {
+    console.error(error);
+    alert("Failed to update address");
+  }
+};
   // =========================
   // DELETE IMAGEKIT IMAGE
   // =========================
@@ -495,33 +536,140 @@ export default function SellerAccountPage() {
           </div>
 
           {/* LOCATION */}
-          <div className="bg-white rounded-3xl shadow p-6">
-            <h2 className="text-2xl font-bold mb-5">
-              Store Location
-            </h2>
+         <div className="bg-white rounded-3xl shadow p-6">
+  <div className="flex justify-between items-center mb-5">
+    <h2 className="text-2xl font-bold">
+      Store Location
+    </h2>
 
-            <div className="space-y-5">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Address
-                </p>
+    {!editingAddress ? (
+      <button
+        onClick={() => setEditingAddress(true)}
+        className="px-4 py-2 rounded-xl bg-black text-white"
+      >
+        Edit
+      </button>
+    ) : (
+      <button
+        onClick={updateAddress}
+        className="px-4 py-2 rounded-xl bg-green-600 text-white"
+      >
+        Save
+      </button>
+    )}
+  </div>
 
-                <p className="text-lg font-semibold">
-                  {seller?.location?.address}
-                </p>
-              </div>
+  {editingAddress ? (
+    <div className="space-y-4">
+      <input
+        className="w-full border rounded-xl p-3"
+        placeholder="Full Address"
+        value={addressData.address}
+        onChange={(e) =>
+          setAddressData({
+            ...addressData,
+            address: e.target.value,
+          })
+        }
+      />
 
-              <div>
-                <p className="text-sm text-gray-500 mb-1">
-                  Pincode
-                </p>
+      <input
+        className="w-full border rounded-xl p-3"
+        placeholder="Landmark"
+        value={addressData.landmark}
+        onChange={(e) =>
+          setAddressData({
+            ...addressData,
+            landmark: e.target.value,
+          })
+        }
+      />
 
-                <p className="font-semibold">
-                  {seller?.location?.pincode}
-                </p>
-              </div>
-            </div>
-          </div>
+      <input
+        className="w-full border rounded-xl p-3"
+        placeholder="City"
+        value={addressData.city}
+        onChange={(e) =>
+          setAddressData({
+            ...addressData,
+            city: e.target.value,
+          })
+        }
+      />
+
+      <input
+        className="w-full border rounded-xl p-3"
+        placeholder="State"
+        value={addressData.state}
+        onChange={(e) =>
+          setAddressData({
+            ...addressData,
+            state: e.target.value,
+          })
+        }
+      />
+
+      <input
+        className="w-full border rounded-xl p-3"
+        placeholder="Pincode"
+        value={addressData.pincode}
+        onChange={(e) =>
+          setAddressData({
+            ...addressData,
+            pincode: e.target.value,
+          })
+        }
+      />
+    </div>
+  ) : (
+    <div className="space-y-5">
+      <div>
+        <p className="text-sm text-gray-500">
+          Address
+        </p>
+        <p className="font-semibold">
+          {seller?.location?.address}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-gray-500">
+          Landmark
+        </p>
+        <p className="font-semibold">
+          {seller?.location?.landmark || "-"}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-gray-500">
+          City
+        </p>
+        <p className="font-semibold">
+          {seller?.location?.city || "-"}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-gray-500">
+          State
+        </p>
+        <p className="font-semibold">
+          {seller?.location?.state || "-"}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-gray-500">
+          Pincode
+        </p>
+        <p className="font-semibold">
+          {seller?.location?.pincode}
+        </p>
+      </div>
+    </div>
+  )}
+</div>
         </div>
       </div>
     </div>

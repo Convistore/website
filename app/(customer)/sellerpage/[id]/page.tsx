@@ -72,7 +72,7 @@ export default function SellerShopPage() {
 
   // 🚚 Delivery state - Only Same-Day (map) delivery available
   const [selectedDelivery, setSelectedDelivery] = useState("map");
-
+const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const observer = useRef<any>(null);
 
   /// =========================
@@ -469,7 +469,18 @@ export default function SellerShopPage() {
         ========================= */}
         <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
           {/* BANNER - FIXED URL */}
-          <div className="relative h-28 sm:h-40 md:h-52 lg:h-60 w-full">
+<div
+  className="relative h-28 sm:h-40 md:h-52 lg:h-60 w-full cursor-pointer"
+  onClick={() =>
+    setFullscreenImage(
+      buildImageUrl(
+        seller.shopImage?.url,
+        "q-100",
+        "/fallback.png"
+      )
+    )
+  }
+>
             <Image
               loading="lazy"
               src={buildImageUrl(
@@ -505,7 +516,18 @@ export default function SellerShopPage() {
 
           {/* INFO - FIXED URL */}
           <div className="p-3 sm:p-5 md:p-6 flex items-start sm:items-center gap-3 sm:gap-4">
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden flex-shrink-0">
+           <div
+  className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden flex-shrink-0 cursor-pointer"
+  onClick={() =>
+    setFullscreenImage(
+      buildImageUrl(
+        seller.sellerImage?.url,
+        "q-100",
+        "/avatar.png"
+      )
+    )
+  }
+>
               <Image
                 loading="lazy"
                 src={buildImageUrl(
@@ -859,7 +881,38 @@ export default function SellerShopPage() {
           </div>
         </div>
       )}
+{fullscreenImage && (
+  <div
+    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center"
+    onClick={() => setFullscreenImage(null)}
+  >
+    {/* Close Button */}
+ <button
+  onClick={(e) => {
+    e.stopPropagation();
+    setFullscreenImage(null);
+  }}
+  className="absolute top-5 right-5 z-[10000] w-12 h-12 rounded-full bg-black/50 backdrop-blur-md text-white text-2xl flex items-center justify-center hover:bg-black/70 transition"
+>
+  ✕
+</button>
 
+    {/* Image */}
+<div
+  className="relative w-full h-full flex items-center justify-center p-4 z-0"
+  onClick={(e) => e.stopPropagation()}
+>
+  <Image
+    src={fullscreenImage}
+    alt="Preview"
+    fill
+    className="object-contain"
+    sizes="100vw"
+    priority
+  />
+</div>
+  </div>
+)}
       {/* =========================
           GLOBAL STYLE
       ========================= */}
